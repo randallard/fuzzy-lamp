@@ -1,0 +1,24 @@
+{
+  "name": "f3-fulcro-start",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/randallard/f3-fulcro-start.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/randallard/f3-fulcro-start/issues"
+  },
+  "homepage": "https://github.com/randallard/f3-fulcro-start#readme",
+  "dependencies": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "shadow-cljs": "^2.16.6"
+  }
+}
