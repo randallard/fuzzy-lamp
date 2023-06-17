@@ -31,10 +31,7 @@ connection details:
   host: localhost
   port: 9000
   click 'apply' then 'ok'
-  New boostFile…
-  Edited Nov 30, 2021
-  Ryan Khetlyr
-  Ryan Khetlyr
+
   Choose 'cljs repl'
   click the green play button next to it
   click in the repl where you see "Connecting to remote nREPL..."
