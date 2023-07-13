@@ -1,5 +1,5 @@
 # fulcro-developers-guide-start
-use this to skip to the good part of the fulcro developers guide
+use this to skip to the good part of the fulcro developers guide 
 
 set deps.edn to open with IntelliJ
 double click deps.edn
@@ -58,4 +58,10 @@ connection details:
   (in-ns 'app.client)
   maybe you can run
   (f 3)
-  maybe have to load the file?
+
+Going remote - need to  
+
+npm install shadow-cljs react react-dom --save
+npx shadow-cljs server
+
+need to run (in-ns 'user) then (start)
