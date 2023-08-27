@@ -31,6 +31,9 @@ connection details:
   host: localhost
   port: 9000
   click 'apply' then 'ok'
+- 
+- you should see your project root as the context module
+- if you don't then maybe close intellij and reopen by clicking deps.edn?
 
   Choose 'cljs repl'
   click the green play button next to it
