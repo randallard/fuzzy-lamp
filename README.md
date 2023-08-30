@@ -1,24 +1,36 @@
-# fulcro-developers-guide-start
-use this to skip to the good part of the fulcro developers guide 
+# Getting set up in IntelliJ Idea
 
-set deps.edn to open with IntelliJ
-double click deps.edn
-install deps as described here: https://cursive-ide.com/userguide/deps.html (must use v 0.12.1090 - tried through 0.12.1109 and they dont work)
+You should have Cursive installed in IntelliJ
 
+Start by setting deps.edn to open in IntelliJ - for example, in Windows file explorer, right click deps.edn and choose 'open with' then 'choose another application'.  
+Check the box next to "Always use this app to open .edn files" and select IntelliJ Idea 
+
+Open IntelliJ Idea by double clicking deps.edn
+
+Find and click the Terminal tab at the bottom of IntelliJ Idea
+cd to your repo, probably fulcro-developers-guide-start
 run shadow-cljs install with the following command
-npm install shadow-cljs react react-dom --save
-run in the terminal
-npx shadow-cljs server
-browse to the localhost:9### listed
 
-click 'Builds'
+    npm install shadow-cljs react react-dom --save
+
+run in the terminal
+
+    npx shadow-cljs server
+
+in a browser, go to the localhost:9### listed (where :9### is maybe :9630)
+
+click 'Builds' in the top tabs list
+
+click on the word 'main' so you can see the updates as it compiles, text in a box labeled 'Status' will appear
+
 click 'Watch'
 wait for green
 
-click 'Dashboard'
-click localhost:8000
+in a new tab, go to http://localhost:8000
 
 Should see TODO
+
+If you have trouble with the following steps - refer to the instructions at: https://cursive-ide.com/userguide/deps.html
 
 in IntelliJ
 Edit Configurations
@@ -47,7 +59,7 @@ connection details:
   click ok on that
   open dev tools there in chrome and go to the console
   back in the repl, run
-  (println "up and running!")
+  (print "up and running!")
   in the console of the browser you should see "up and running!"
   in IntelliJ, open /src/main/app/client.cljs
   add the following to the bottom of that file:
@@ -58,4 +70,3 @@ connection details:
   (in-ns 'app.client)
   maybe you can run
   (f 3)
-  maybe have to load the file?
