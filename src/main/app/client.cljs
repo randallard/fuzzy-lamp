@@ -7,8 +7,16 @@
 
 (defonce app (-> (app/fulcro-app) (with-react18)))
 
+(defsc Person [this {:person/keys [name age]}]
+  (dom/div
+    (dom/p "Name: " name)
+    (dom/p "Age: " age)))
+
+(def ui-person (comp/factory Person))
+
 (defsc Root [this props]
-       (dom/div "TODO"))
+  (dom/div
+    (ui-person {:person/name "Joe" :person/age 22})))
 
 (defn ^:export init
       "Shadow-cljs sets this up to be our entry-point function. See shadow-cljs.edn `:init-fn` in the modules of the main build."
