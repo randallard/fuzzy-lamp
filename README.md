@@ -28,45 +28,61 @@ wait for green
 
 in a new tab, go to http://localhost:8000
 
-Should see TODO
+Should see "Ready to go!"
 
 If you have trouble with the following steps - refer to the instructions at: https://cursive-ide.com/userguide/deps.html
 
 in IntelliJ
-Edit Configurations
-add (+) Clojure REPL - Remote
-set the following
-name: cljs repl
-connection type:  nREPL
-connection details:
-- connect to server
-  host: localhost
-  port: 9000
-  click 'apply' then 'ok'
 
-  Choose 'cljs repl'
-  click the green play button next to it
-  click in the repl where you see "Connecting to remote nREPL..."
-  enter the following (it will show up below)
-  (+ 1 1)
-  submit with ctrl+enter
-  hopefully you see => 2 show up in the REPL
-  run
-  (shadow/repl :main)
-  run
-  (js/alert "howdy")
-  go to your localhost:8000 tab and you should see the alert "howdy"
-  click ok on that
-  open dev tools there in chrome and go to the console
-  back in the repl, run
-  (print "up and running!")
-  in the console of the browser you should see "up and running!"
-  in IntelliJ, open /src/main/app/client.cljs
-  add the following to the bottom of that file:
-  (defn f [x] (* x x))
-  in the console, run
-  app.client.f(3)
-  in the repl you need to switch to the namespace with
-  (in-ns 'app.client)
-  maybe you can run
-  (f 3)
+Edit Configurations
+
+add (+) Clojure REPL - Remote
+
+set the following
+
+name: cljs repl
+
+connection type:  nREPL
+
+connection details:
+
+connect to server
+- host: localhost
+- port: 9000
+
+click 'apply' then 'ok'
+
+Choose 'cljs repl'
+
+click the green play button next to it
+
+click in the repl where you see "Connecting to remote nREPL..."
+
+let's run some clojure in the repl - enter the following 
+
+    (+ 1 1)
+
+submit with ctrl+enter
+
+hopefully you see => 2 show up in the REPL
+
+to connect to the app running in the browser, run
+
+    (shadow/repl :main)
+
+now you can run
+
+    (js/alert "howdy")
+
+go to your localhost:8000 tab and you should see the alert "howdy"
+
+click ok on that
+
+open dev tools there in chrome and go to the console
+
+back in the repl, run
+
+    (print "up and running!")
+
+in the console of the browser you should see "up and running!"
+
