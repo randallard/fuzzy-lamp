@@ -90,7 +90,7 @@
 (defsc Block [this {:block/keys [id row-number space-number]}]
   {}
   (dom/span "block set at ( row " row-number ", column " space-number " )"))
-(def ui-blocks (comp/factory Block {:keyfn :block/id}))
+(def ui-block (comp/factory Block {:keyfn :block/id}))
 (defsc Step [this {:step/keys [id number positions blocks]}]
   {}
   (dom/div "Step " number " "
@@ -105,10 +105,10 @@
 (defsc Board [this {:board/keys [id size rows plans] :as props}]
   {}
   (dom/div {:style {:width "100%"}}
-    (dom/div {:style {:float "left" :width "50%" :padding "10px"}}
+    (dom/div {:style {:float "left" :padding "10px"}}
            (dom/h2 "Board [" id "] Size " size)
            (dom/div (map ui-row rows)))
-    (dom/div {:style {:float "left" :width "50%" :padding "10px"}}
+    (dom/div {:style {:float "left" :padding "10px"}}
            (dom/h2 "Plans")
            (dom/div (map ui-plan plans)))))
 
