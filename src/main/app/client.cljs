@@ -75,13 +75,14 @@
   (dom/span (space-css nil occupied) "Space[" number "]"))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
-(defsc Row [this {:row/keys [id number type spaces] :as props}]
-  {}
+(defsc Row [this {:row/keys [id number type] :as props}]
+  {:query [:row/id :row/number :row/type]
+   :ident :row/id}
   (dom/div (str "Row[" number "] type " type)
            (dom/div {:style {:padding "15px"}}
                     (cond
                       (= type :row-type/goal) (dom/span (space-css type nil) "GOAL")
-                      (= type :row-type/spaces) (map ui-space spaces)))))
+                      #_#_(= type :row-type/spaces) (map ui-space spaces)))))
 (def ui-row (comp/factory Row {:keyfn :row/id}))
 (defsc Position [this {:position/keys [id row-number space-number]}]
   {}
@@ -102,13 +103,14 @@
   (dom/div (dom/p "Plan Number " number
                   (dom/ul (map ui-step steps)))))
 (def ui-plan (comp/factory Plan {:keyfn :plan/id}))
-(defsc Board [this {:board/keys [id size rows plans] :as props}]
-  {}
+(defsc Board [this {:board/keys [id size rows] :as props}]
+  {:query [:board/id :board/size {:board/rows (comp/get-query Row)}]
+   :ident :board/id }
   (dom/div {:style {:width "100%"}}
     (dom/div {:style {:float "left" :padding "10px"}}
            (dom/h2 "Board [" id "] Size " size)
            (dom/div (map ui-row rows)))
-    (dom/div {:style {:float "left" :padding "10px"}}
+    #_(dom/div {:style {:float "left" :padding "10px"}}
            (dom/h2 "Plans")
            (dom/div (map ui-plan plans)))))
 
@@ -116,9 +118,9 @@
 
 (defonce app (-> (app/fulcro-app) (with-react18)))
 
-(defsc Root [this {:keys [root]}]
-  {}
-  (dom/div (ui-board root)))
+(defsc Root [this {:root/keys [board]}]
+  {:query [{:root/board (comp/get-query Board)}]}
+  (dom/div (ui-board board)))
 
 (defn ^:export init
   "Shadow-cljs sets this up to be our entry-point function. See shadow-cljs.edn `:init-fn` in the modules of the main build."
@@ -136,9 +138,17 @@
   (js/console.log "Hot reload"))
 
 (comment
-  (shadow/repl :main)
+  (reset! (::app/state-atom app) {})
+  (merge/merge-component! app Board new-board
+                          :replace [:root/board])
+
+  (merge/merge-component! app Board {:board/id 2
+                                     :board/size 3
+                                     :board/rows [{:row/id 4
+                                                   :row/number 4
+                                                   :row/type :row-type/goal}]}
+                          :replace [:root/board])
   (app/current-state app)
-  (merge/merge-component! app Board new-board)
   (app/schedule-render! app)
-  (reset! (::app/state-atom app) {:root new-board})
+
   )
