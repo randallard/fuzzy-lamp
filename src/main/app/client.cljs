@@ -59,30 +59,32 @@
                                             :space/occupied nil}
                                            {:space/id 2
                                             :space/number 2
-                                            :space/status :free
-                                            :space/occupied [{:occupied/player :us
+                                            :space/status :occupied
+                                            :space/occupied [{:occupied/id 1
+                                                              :occupied/player :us
                                                               :occupied/steps [1]}]}
                                            {:space/id 3
                                             :space/number 3
                                             :space/status :free
                                             :space/occupied nil}]}]})
-(defn space-css [type occupied]
+(defn space-css [type space-status]
   {:className (str "space "
-                (if (not (nil? occupied)) "occupied ")
+                (if (= space-status :occupied) "occupied ")
                    (if (= type :row-type/goal) "goal "))})
-(defsc Space [this {:space/keys [id number status occupied]}]
-  {}
-  (dom/span (space-css nil occupied) "Space[" number "]"))
+(defsc Space [this {:space/keys [id number status]}]
+  {:query [:space/id :space/number :space/status]
+   :ident :space/id}
+  (dom/span (space-css nil status) "Space[" number "]"))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
-(defsc Row [this {:row/keys [id number type] :as props}]
-  {:query [:row/id :row/number :row/type]
+(defsc Row [this {:row/keys [id number type spaces] :as props}]
+  {:query [:row/id :row/number :row/type {:row/spaces (comp/get-query Space)}]
    :ident :row/id}
   (dom/div (str "Row[" number "] type " type)
            (dom/div {:style {:padding "15px"}}
                     (cond
                       (= type :row-type/goal) (dom/span (space-css type nil) "GOAL")
-                      #_#_(= type :row-type/spaces) (map ui-space spaces)))))
+                      (= type :row-type/spaces) (map ui-space spaces)))))
 (def ui-row (comp/factory Row {:keyfn :row/id}))
 (defsc Position [this {:position/keys [id row-number space-number]}]
   {}
@@ -140,13 +142,6 @@
 (comment
   (reset! (::app/state-atom app) {})
   (merge/merge-component! app Board new-board
-                          :replace [:root/board])
-
-  (merge/merge-component! app Board {:board/id 2
-                                     :board/size 3
-                                     :board/rows [{:row/id 4
-                                                   :row/number 4
-                                                   :row/type :row-type/goal}]}
                           :replace [:root/board])
   (app/current-state app)
   (app/schedule-render! app)
