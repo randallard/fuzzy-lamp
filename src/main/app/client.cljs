@@ -31,30 +31,30 @@
                               :row/spaces [{:space/id 7
                                             :space/number 1
                                             :space/status :free
-                                            :space/occupied nil}
+                                            :space/occupied []}
                                            {:space/id 8
                                             :space/number 2
                                             :space/status :free
-                                            :space/occupied nil}
+                                            :space/occupied []}
                                            {:space/id 9
                                             :space/number 3
                                             :space/status :free
-                                            :space/occupied nil}]}
+                                            :space/occupied []}]}
                              {:row/id 2
                               :row/number 2
                               :row/type :row-type/spaces
                               :row/spaces [{:space/id 4
                                             :space/number 1
                                             :space/status :free
-                                            :space/occupied nil}
+                                            :space/occupied []}
                                            {:space/id 5
                                             :space/number 2
                                             :space/status :free
-                                            :space/occupied nil}
+                                            :space/occupied []}
                                            {:space/id 6
                                             :space/number 3
                                             :space/status :free
-                                            :space/occupied nil}]}
+                                            :space/occupied []}]}
                              {:row/id 1
                               :row/number 1
                               :row/type :row-type/spaces
@@ -73,7 +73,7 @@
                                            {:space/id 3
                                             :space/number 3
                                             :space/status :free
-                                            :space/occupied nil}]}]})
+                                            :space/occupied []}]}]})
 (def new-board {:board/id 1
                 :board/size 3
                 :board/plans [{:plan/id 1
@@ -99,37 +99,37 @@
                               :row/spaces [{:space/id 7
                                             :space/number 1
                                             :space/status :free
-                                            :space/occupied nil}
+                                            :space/occupied []}
                                            {:space/id 8
                                             :space/number 2
                                             :space/status :free
-                                            :space/occupied nil}
+                                            :space/occupied []}
                                            {:space/id 9
                                             :space/number 3
                                             :space/status :free
-                                            :space/occupied nil}]}
+                                            :space/occupied []}]}
                              {:row/id 2
                               :row/number 2
                               :row/type :row-type/spaces
                               :row/spaces [{:space/id 4
                                             :space/number 1
                                             :space/status :free
-                                            :space/occupied nil}
+                                            :space/occupied []}
                                            {:space/id 5
                                             :space/number 2
                                             :space/status :free
-                                            :space/occupied nil}
+                                            :space/occupied []}
                                            {:space/id 6
                                             :space/number 3
                                             :space/status :free
-                                            :space/occupied nil}]}
+                                            :space/occupied []}]}
                              {:row/id 1
                               :row/number 1
                               :row/type :row-type/spaces
                               :row/spaces [{:space/id 1
                                             :space/number 1
                                             :space/status :free
-                                            :space/occupied nil}
+                                            :space/occupied []}
                                            {:space/id 2
                                             :space/number 2
                                             :space/status :occupied
@@ -139,7 +139,7 @@
                                            {:space/id 3
                                             :space/number 3
                                             :space/status :free
-                                            :space/occupied nil}]}]})
+                                            :space/occupied []}]}]})
 
 (defn space-css [type space-status]
   {:className (str "space "
@@ -216,37 +216,37 @@
                                  :spaces [{:id 7
                                            :number 1
                                            :status :free
-                                           :occupied nil}
+                                           :occupied []}
                                           {:id 8
                                            :number 2
                                            :status :free
-                                           :occupied nil}
+                                           :occupied []}
                                           {:id 9
                                            :number 3
                                            :status :free
-                                           :occupied nil}]}
+                                           :occupied []}]}
                                 {:id 2
                                  :number 2
                                  :type :row-type/spaces
                                  :spaces [{:id 4
                                            :number 1
                                            :status :free
-                                           :occupied nil}
+                                           :occupied []}
                                           {:id 5
                                            :number 2
                                            :status :free
-                                           :occupied nil}
+                                           :occupied []}
                                           {:id 6
                                            :number 3
                                            :status :free
-                                           :occupied nil}]}
+                                           :occupied []}]}
                                 {:id 1
                                  :number 1
                                  :type :row-type/spaces
                                  :spaces [{:id 1
                                            :number 1
                                            :status :free
-                                           :occupied nil}
+                                           :occupied []}
                                           {:id 2
                                            :number 2
                                            :status :occupied
@@ -256,7 +256,7 @@
                                           {:id 3
                                            :number 3
                                            :status :free
-                                           :occupied nil}]}]
+                                           :occupied []}]}]
                    :board/plans []}}
   (dom/div {:style {:width "100%"}}
     (dom/div {:style {:float "left" :padding "10px"}}
@@ -293,6 +293,8 @@
 (comment
   (reset! (::app/state-atom app) {})
   (merge/merge-component! app Board new-board
+                          :replace [:root/board])
+  (merge/merge-component! app Board test-board
                           :replace [:root/board])
   (app/current-state app)
   (app/schedule-render! app)
@@ -335,6 +337,7 @@
                           :append [:plan/id 1 :plan/steps])
   ; update newly occupied space
   ; set status -  - this adds a :root/space to the database - not sure that's right
+  (app/current-state app)
   (merge/merge-component! app Space {:space/id 5
                                      :space/status :occupied}
                           :replace [:root/space])
