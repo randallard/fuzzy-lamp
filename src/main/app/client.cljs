@@ -5,6 +5,7 @@
     [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
     [com.fulcrologic.fulcro.dom :as dom]
     [com.fulcrologic.fulcro.algorithms.merge :as merge]
+    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
     [com.fulcrologic.fulcro.algorithms.data-targeting :as targeting]))
 (def test-board {:board/id 1
                 :board/size 3
@@ -140,7 +141,12 @@
                                             :space/number 3
                                             :space/status :free
                                             :space/occupied nil}]}]})
-
+(defmutation inc-number [{:space/keys [id]}]
+  (action [{:keys [state]}]
+          (swap! state update-in [:space/id id :space/number] inc)))
+(defmutation make-blocked [{:space/keys [id]}]
+             (action [{:keys [state]}]
+                     (swap! state assoc-in [:space/id id :space/status :blocked])))
 (defn space-css [type space-status]
   {:className (str "space "
                    (if (= space-status :occupied) "occupied ")
@@ -161,8 +167,11 @@
                    :space/number :param/number
                    :space/status :param/status
                    :space/occupied :param/occupied}}
+  #_(dom/span (space-css nil status) "Space id " id " number " number " "
+            (str status " ") (map ui-occupied occupied) )
   (dom/span (space-css nil status) "Space id " id " number " number " "
-            (str status " ") (map ui-occupied occupied) ))
+            (dom/button {:onCLick #(comp/transact! this [(inc-number {:space/id id})])}
+                        " bump ")))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
 (defsc Row [this {:row/keys [id number type spaces] :as props}]
@@ -291,6 +300,9 @@
   (js/console.log "Hot reload"))
 
 (comment
+  (comp/transact! app [(inc-number {:space/id 7})])
+  (comp/transact! app [(make-blocked {:space/id 7})])
+
   (reset! (::app/state-atom app) {})
   (merge/merge-component! app Board new-board
                           :replace [:root/board])
