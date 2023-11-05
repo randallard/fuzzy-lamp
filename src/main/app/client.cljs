@@ -154,7 +154,7 @@
 (defsc Space [this {:space/keys [id number status occupied]}]
   {:query [:space/id :space/number :space/status {:space/occupied (comp/get-query Occupied)}]
    :ident :space/id}
-  (dom/span (space-css nil status) "Space[" number "]"
+  (dom/span (space-css nil status) "Space id " id " number " number " "
             (str status " ") (map ui-occupied occupied) ))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
@@ -231,5 +231,52 @@
                           :replace [:root/board])
   (app/current-state app)
   (app/schedule-render! app)
+
+  ; append a block step to a plan
+  (merge/merge-component! app Step {:step/id 4
+                                    :step/number 4
+                                    :step/blocks [{:block/id 2
+                                                   :block/row-number 2
+                                                   :block/space-number 3}]
+                                    :step/positions []}
+                          :append [:plan/id 1 :plan/steps])
+
+  ; update newly occupied space
+  ; set status to blocked
+  (merge/merge-component! app Space {:space/id 6
+                                     :space/status :blocked}
+                          :replace [:root/space])
+
+  ; append :blocked to newly blocked space
+  (merge/merge-component! app Occupied {:occupied/id 4
+                                        :occupied/player :us
+                                        :occupied/steps [4]}
+                          :append [:space/id 6 :space/occupied])
+
+  ; append steps step number to occupied of player occupied space
+  ; --- not the way to be done in live
+  (merge/merge-component! app Occupied {:occupied/id 3
+                                     :occupied/steps [3 4]}
+                          :replace [:root/occupied])
+
+  ; append a movement step to a plan
+  (merge/merge-component! app Step {:step/id 3
+                                    :step/number 3
+                                    :step/blocks []
+                                    :step/positions [{:position/id 2
+                                                      :position/row-number 2
+                                                      :position/space-number 2}]}
+                          :append [:plan/id 1 :plan/steps])
+  ; update newly occupied space
+  ; set status
+  (merge/merge-component! app Space {:space/id 5
+                                     :space/status :occupied}
+                          :replace [:root/space])
+  ; append :occupied to newly occupied space
+  (merge/merge-component! app Occupied {:occupied/id 3
+                                        :occupied/player :us
+                                        :occupied/steps [3]}
+                          :append [:space/id 5 :space/occupied])
+
 
   )
