@@ -148,12 +148,19 @@
                    (if (= type :row-type/goal) "goal "))})
 (defsc Occupied [this {:occupied/keys [id player steps]}]
   {:query [:occupied/id :occupied/player :occupied/steps]
-   :ident :occupied/id}
+   :ident :occupied/id
+   :initial-state {:occupied/id :param/id
+                   :occupied/player :param/player
+                   :occupied/steps :param/steps}}
   (dom/span (str "By " player " at " steps)))
 (def ui-occupied (comp/factory Occupied {:keyfn :occupied/id}))
 (defsc Space [this {:space/keys [id number status occupied]}]
   {:query [:space/id :space/number :space/status {:space/occupied (comp/get-query Occupied)}]
-   :ident :space/id}
+   :ident :space/id
+   :initial-state {:space/id :param/id
+                   :space/number :param/number
+                   :space/status :param/status
+                   :space/occupied :param/occupied}}
   (dom/span (space-css nil status) "Space id " id " number " number " "
             (str status " ") (map ui-occupied occupied) ))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
