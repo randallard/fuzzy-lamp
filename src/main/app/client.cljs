@@ -160,7 +160,11 @@
 
 (defsc Row [this {:row/keys [id number type spaces] :as props}]
   {:query [:row/id :row/number :row/type {:row/spaces (comp/get-query Space)}]
-   :ident :row/id}
+   :ident :row/id
+   :initial-state {:row/id :param/id
+                   :row/number :param/number
+                   :row/type :param/type
+                   :row/spaces :param/spaces}}
   (dom/div (str "Row[" number "] type " type)
            (dom/div {:style {:padding "15px"}}
                     (cond
@@ -193,7 +197,60 @@
 (def ui-plan (comp/factory Plan {:keyfn :plan/id}))
 (defsc Board [this {:board/keys [id size rows plans] :as props}]
   {:query [:board/id :board/size {:board/rows (comp/get-query Row)} {:board/plans (comp/get-query Plan)}]
-   :ident :board/id }
+   :ident :board/id
+   :initial-state {:board/id :param/id
+                   :board/size :param/size
+                   :board/rows [{:id 4
+                                 :number 4
+                                 :type :row-type/goal}
+                                {:id 3
+                                 :number 3
+                                 :type :row-type/spaces
+                                 :spaces [{:id 7
+                                           :number 1
+                                           :status :free
+                                           :occupied nil}
+                                          {:id 8
+                                           :number 2
+                                           :status :free
+                                           :occupied nil}
+                                          {:id 9
+                                           :number 3
+                                           :status :free
+                                           :occupied nil}]}
+                                {:id 2
+                                 :number 2
+                                 :type :row-type/spaces
+                                 :spaces [{:id 4
+                                           :number 1
+                                           :status :free
+                                           :occupied nil}
+                                          {:id 5
+                                           :number 2
+                                           :status :free
+                                           :occupied nil}
+                                          {:id 6
+                                           :number 3
+                                           :status :free
+                                           :occupied nil}]}
+                                {:id 1
+                                 :number 1
+                                 :type :row-type/spaces
+                                 :spaces [{:id 1
+                                           :number 1
+                                           :status :free
+                                           :occupied nil}
+                                          {:id 2
+                                           :number 2
+                                           :status :occupied
+                                           :occupied [{:id 1
+                                                       :player :us
+                                                       :steps [1]}]}
+                                          {:id 3
+                                           :number 3
+                                           :status :free
+                                           :occupied nil}]}]
+                   :board/plans []}}
   (dom/div {:style {:width "100%"}}
     (dom/div {:style {:float "left" :padding "10px"}}
            (dom/h2 "Board [" id "] Size " size)
@@ -207,7 +264,8 @@
 (defonce app (-> (app/fulcro-app) (with-react18)))
 
 (defsc Root [this {:root/keys [board]}]
-  {:query [{:root/board (comp/get-query Board)}]}
+  {:query [{:root/board (comp/get-query Board)}]
+   :initial-state {:root/board {:id 1 :size 3}}}
   (dom/div (ui-board board)))
 
 (defn ^:export init
@@ -243,6 +301,7 @@
 
   ; update newly occupied space
   ; set status to blocked
+  ; this adds a :root/space to the database - not sure that's right
   (merge/merge-component! app Space {:space/id 6
                                      :space/status :blocked}
                           :replace [:root/space])
@@ -254,7 +313,7 @@
                           :append [:space/id 6 :space/occupied])
 
   ; append steps step number to occupied of player occupied space
-  ; --- not the way to be done in live
+  ; --- not the way to be done in live - this adds a :root/occupied to the database - not sure that's right
   (merge/merge-component! app Occupied {:occupied/id 3
                                      :occupied/steps [3 4]}
                           :replace [:root/occupied])
@@ -268,7 +327,7 @@
                                                       :position/space-number 2}]}
                           :append [:plan/id 1 :plan/steps])
   ; update newly occupied space
-  ; set status
+  ; set status -  - this adds a :root/space to the database - not sure that's right
   (merge/merge-component! app Space {:space/id 5
                                      :space/status :occupied}
                           :replace [:root/space])
