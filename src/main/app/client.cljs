@@ -6,8 +6,17 @@
     [com.fulcrologic.fulcro.dom :as dom]
     [com.fulcrologic.fulcro.algorithms.merge :as merge]
     [com.fulcrologic.fulcro.algorithms.data-targeting :as targeting]))
+
 (def new-board {:board/id 1
                 :board/size 3
+                :board/plans [{:plan/id 1
+                               :plan/number 1
+                               :plan/steps [{:step/id 1
+                                             :step/number 1
+                                             :step/blocks []
+                                             :step/positions [{:position/id 1
+                                                             :position/row-number 1
+                                                             :position/space-number 2}]}]}]
                 :board/rows [{:row/id 4
                               :row/number 4
                               :row/type :row-type/goal}
@@ -74,11 +83,34 @@
                       (= type :row-type/goal) (dom/span (space-css type nil) "GOAL")
                       (= type :row-type/spaces) (map ui-space spaces)))))
 (def ui-row (comp/factory Row {:keyfn :row/id}))
-
-(defsc Board [this {:board/keys [id size rows] :as props}]
+(defsc Position [this {:position/keys [id row-number space-number]}]
   {}
-  (dom/div (dom/h2 "Board [" id "] Size " size)
-           (dom/div (map ui-row rows))))
+  (dom/span "player at ( row " row-number ", column " space-number " )"))
+(def ui-position (comp/factory Position {:keyfn :position/id}))
+(defsc Block [this {:block/keys [id row-number space-number]}]
+  {}
+  (dom/span "block set at ( row " row-number ", column " space-number " )"))
+(def ui-blocks (comp/factory Block {:keyfn :block/id}))
+(defsc Step [this {:step/keys [id number positions blocks]}]
+  {}
+  (dom/div "Step " number " "
+           (map ui-position positions)
+           (map ui-block blocks)))
+(def ui-step (comp/factory Step {:keyfn :step/id}))
+(defsc Plan [this {:plan/keys [id number steps] :as props}]
+  {}
+  (dom/div (dom/p "Plan Number " number
+                  (dom/ul (map ui-step steps)))))
+(def ui-plan (comp/factory Plan {:keyfn :plan/id}))
+(defsc Board [this {:board/keys [id size rows plans] :as props}]
+  {}
+  (dom/div {:style {:width "100%"}}
+    (dom/div {:style {:float "left" :width "50%" :padding "10px"}}
+           (dom/h2 "Board [" id "] Size " size)
+           (dom/div (map ui-row rows)))
+    (dom/div {:style {:float "left" :width "50%" :padding "10px"}}
+           (dom/h2 "Plans")
+           (dom/div (map ui-plan plans)))))
 
 (def ui-board (comp/factory Board {:keyfn :board/id}))
 
@@ -104,6 +136,7 @@
   (js/console.log "Hot reload"))
 
 (comment
+  (shadow/repl :main)
   (app/current-state app)
   (merge/merge-component! app Board new-board)
   (app/schedule-render! app)
