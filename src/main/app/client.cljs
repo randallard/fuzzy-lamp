@@ -8,12 +8,12 @@
     [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
     [com.fulcrologic.fulcro.algorithms.data-targeting :as targeting]))
 
-(defmutation inc-number [{:space/keys [id]}]
-  (action [{:keys [state]}]
-          (swap! state update-in [:space/id id :space/number] inc)))
 (defmutation make-blocked [{:space/keys [id]}]
              (action [{:keys [state]}]
-                     (swap! state assoc-in [:space/id id :space/status :blocked])))
+                     (swap! state assoc-in [:space/id id :space/status] :blocked)))
+(defmutation make-occupied [{:space/keys [id]}]
+  (action [{:keys [state]}]
+          (swap! state assoc-in [:space/id id :space/status] :occupied)))
 (defn space-css [type space-status]
   {:className (str "space "
                    (if (= space-status :occupied) "occupied ")
@@ -39,9 +39,11 @@
                                                                                  :steps [1]})})}
   #_(dom/span (space-css nil status) "Space id " id " number " number " "
             (str status " ") (map ui-occupied occupied) )
-  (dom/span (space-css nil status) "Space id " id " number " number " "
-            (dom/button {:onCLick #(comp/transact! this [(inc-number {:space/id id})])}
-                        " number++ ")))
+  (dom/span (space-css nil status)
+            (dom/button {:onClick #(comp/transact! this [(make-blocked {:space/id id})]) :style {:margin "0px 15px"}}
+                        " block ")
+            (dom/button {:onClick #(comp/transact! this [(make-occupied {:space/id id})]) :style {:margin "0px 15px"}}
+                        " move ")))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
 (defsc Row [this {:row/keys [id number type spaces] :as props}]
@@ -85,8 +87,8 @@
                                  :row/spaces [(comp/get-initial-state Space {:id 10
                                                                              :number 1
                                                                              :status :free})]}))}
-  (dom/div (str "Row[" number "] type " type)
-           (dom/div {:style {:padding "15px"}}
+  (dom/div #_(str "Row[" number "] type " type)
+           (dom/div {:style {:padding "5px"}}
                     (cond
                       (= type :row-type/goal) (dom/span (space-css type nil) "GOAL")
                       (= type :row-type/spaces) (map ui-space spaces)))))
