@@ -135,12 +135,12 @@
                                  :type :row-type/spaces}]
                    :board/plans []}}
   (dom/div {:style {:width "100%"}}
-           (dom/div {:style {:float "left" :padding "10px"}}
-                    (dom/h2 "Board [" id "] Size " size)
-                    (dom/div (map ui-row rows)))
-           (dom/div {:style {:float "left" :padding "10px"}}
-                    (dom/h2 "Plans")
-                    (dom/div (map ui-plan plans)))))
+    (dom/div {:style {:float "left" :padding "10px"}}
+           (dom/h2 "Board [" id "] Size " size)
+           (dom/div (map ui-row rows)))
+    (dom/div {:style {:float "left" :padding "10px"}}
+           (dom/h2 "Plans")
+           (dom/div (map ui-plan plans)))))
 
 (def ui-board (comp/factory Board {:keyfn :board/id}))
 
@@ -300,6 +300,7 @@
                                             :space/number 3
                                             :space/status :free
                                             :space/occupied []}]}]})
+
 (comment
   (comp/transact! app [(inc-number {:space/id 7})])
   (comp/transact! app [(make-blocked {:space/id 7})])
