@@ -30,13 +30,18 @@
 (defsc Space [this {:space/keys [id number status occupied]}]
   {:query [:space/id :space/number :space/status {:space/occupied (comp/get-query Occupied)}]
    :ident :space/id
-   :initial-state (fn [{:keys [id number status]}] {:space/id id
-                                                    :space/number number
-                                                    :space/status status
-                                                    :space/occupied (cond (not (= id 2)) []
-                                                                          :else {:id 1
-                                                                                 :player :us
-                                                                                 :steps [1]})})}
+   :initial-state (fn [{:keys [id number status]}]
+                    (cond (= status :occupied)
+                          {:space/id id
+                           :space/number number
+                           :space/status status
+                           :space/occupied [(comp/get-initial-state Occupied {:id 1
+                                                                              :player :us
+                                                                              :steps [1]})]}
+                          :else {:space/id id
+                                 :space/number number
+                                 :space/status status
+                                 :space/occupied []}))}
   #_(dom/span (space-css nil status) "Space id " id " number " number " "
             (str status " ") (map ui-occupied occupied) )
   (dom/span (space-css nil status)
