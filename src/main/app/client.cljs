@@ -171,7 +171,7 @@
             (str status " ") (map ui-occupied occupied) )
   (dom/span (space-css nil status) "Space id " id " number " number " "
             (dom/button {:onCLick #(comp/transact! this [(inc-number {:space/id id})])}
-                        " bump ")))
+                        " number++ ")))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
 (defsc Row [this {:row/keys [id number type spaces] :as props}]
