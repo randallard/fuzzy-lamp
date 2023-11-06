@@ -309,16 +309,8 @@
                                             :space/occupied []}]}]})
 
 (comment
-  (comp/transact! app [(inc-number {:space/id 7})])
-  (comp/transact! app [(make-blocked {:space/id 7})])
-
-  (reset! (::app/state-atom app) {})
-  (merge/merge-component! app Board new-board
-                          :replace [:root/board])
-  (merge/merge-component! app Board test-board
-                          :replace [:root/board])
+  (swap! (::app/state-atom app) assoc-in [:occupied/id 1 :occupied/steps] [1 2])
   (app/current-state app)
-  (app/schedule-render! app)
 
   ; append a block step to a plan
   (merge/merge-component! app Step {:step/id 4
