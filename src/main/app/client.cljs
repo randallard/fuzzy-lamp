@@ -71,7 +71,10 @@
                                                                              :status :free})])}
                           :else {:row/id id
                                  :row/number number
-                                 :row/type type}))}
+                                 :row/type type
+                                 :row/spaces [(comp/get-initial-state Space {:id 10
+                                                                             :number 1
+                                                                             :status :free})]}))}
   (dom/div (str "Row[" number "] type " type)
            (dom/div {:style {:padding "15px"}}
                     (cond
