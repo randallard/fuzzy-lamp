@@ -7,20 +7,27 @@
     [com.fulcrologic.fulcro.algorithms.merge :as merge]
     [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
     [com.fulcrologic.fulcro.algorithms.data-targeting :as targeting]))
-
+(defmutation plan-block-here [{:space/keys [id]}]
+  ; add this :step to plan with :step/id,:step/number, [:space/id id] in :blocks vector, [:space/id current-position-space-id] in :step/positions vector
+  (action [{:keys [state]}]
+          (swap! state assoc-in [:space/id id :space/status] :blocked))
+  )
+(defmutation plan-move-here [{:space/keys [id]}]
+  ; add this :step to plan with :step/id,:step/number, [:space/id id] in :step/positions vector
+  (action [{:keys [state]}]
+          (swap! state assoc-in [:space/id id :space/status] :occupied))
+  )
 (defmutation block-here [{:space/keys [id]}]
   ; set :space/status to :blocked
   (action [{:keys [state]}]
           (swap! state assoc-in [:space/id id :space/status] :blocked))
   ; add this step number to :space/occupied vector
-  ; add this :step to plan with :step/id,:step/number, [:space/id id] in :blocks vector, [:space/id current-position-space-id] in :step/positions vector
   )
 (defmutation move-here [{:space/keys [id]}]
   ; set :space/status to :occupied
   (action [{:keys [state]}]
           (swap! state assoc-in [:space/id id :space/status] :occupied))
   ; add this step number to :space/occupied vector
-  ; add this :step to plan with :step/id,:step/number, [:space/id id] in :step/positions vector
   )
 (defn space-css [type space-status]
   {:className (str "space "
@@ -36,9 +43,9 @@
   {:query [:space/id :space/number :space/status {:space/occupied (comp/get-query Occupied)}]
    :ident :space/id}
   (dom/span (space-css nil status)
-            (dom/button {:onClick #(comp/transact! this [(block-here {:space/id id})]) :style {:margin "0px 15px"}}
+            (dom/button {:onClick #(comp/transact! this [(plan-block-here {:space/id id})]) :style {:margin "0px 15px"}}
                         " block ")
-            (dom/button {:onClick #(comp/transact! this [(move-here {:space/id id})]) :style {:margin "0px 15px"}}
+            (dom/button {:onClick #(comp/transact! this [(plan-move-here {:space/id id})]) :style {:margin "0px 15px"}}
                         " move ")))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
@@ -54,14 +61,22 @@
 (def ui-row (comp/factory Row {:keyfn :row/id}))
 (defsc Step [this {:step/keys [id number position-space block-space]}]
   {:query [:step/id :step/number :step/block-space :step/position-space]
-   :ident :step/id}
-  (dom/div {} "Step " number " " (cond (nil? block-space) (str " move to space id " (:id position-space))
-                                       :else (str " block space id " (:id block-space)
-                                                  " from position space id " (:id position-space)))))
+   :ident :step/id
+   :initial-state {:step/id :param/id
+                   :step/number :param/number
+                   :step/position-space :param/position-space}}
+  (dom/div {} "Step " number " " (cond (nil? block-space) (str " move to space id " (:space/id position-space))
+                                       :else (str " block space id " (:space/id block-space)
+                                                  " from position space id " (:space/id position-space)))))
 (def ui-step (comp/factory Step {:keyfn :step/id}))
 (defsc Plan [this {:plan/keys [id number steps] :as props}]
   {:query [:plan/id :plan/number {:plan/steps (comp/get-query Step)}]
-   :ident :plan/id}
+   :ident :plan/id
+   :initial-state {:plan/id :param/id
+                   :plan/number :param/number
+                   :plan/steps [{:id 1
+                                 :number 1
+                                 :position-space [[:space/id 2]]}]}}
   (dom/div {} (dom/p {} "Plan Number " number
                   (dom/ul {} (map ui-step steps)))))
 (def ui-plan (comp/factory Plan {:keyfn :plan/id}))
@@ -69,7 +84,9 @@
   {:query [:board/id :board/size {:board/rows (comp/get-query Row)} {:board/plans (comp/get-query Plan)}]
    :ident :board/id
    :initial-state {:board/id :param/id
-                   :board/size :param/size}}
+                   :board/size :param/size
+                   :board/plans [{:id 1
+                                  :number 1}]}}
   (dom/div {:style {:width "100%"}}
     (dom/div {:style {:float "left" :padding "10px"}}
            (dom/h2 {} "Board [" id "] Size " size)
