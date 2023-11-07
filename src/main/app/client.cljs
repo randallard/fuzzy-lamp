@@ -95,7 +95,7 @@
   (dom/div {} #_(str "Row[" number "] type " type)
            (dom/div {:style {:padding "5px"}}
                     (cond
-                      (= type :row-type/goal) (dom/span (space-css type nil) "GOAL")
+                      (= type :row-type/goal) (dom/span "GOAL--->GOAL--->GOAL-->" (map ui-space spaces) "<---GOAL<---GOAL---GOAL")
                       (= type :row-type/spaces) (map ui-space spaces)))))
 
 (def ui-row (comp/factory Row {:keyfn :row/id}))
