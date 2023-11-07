@@ -81,8 +81,66 @@
            (dom/div {} (map ui-plan plans)))))
 
 (def ui-board (comp/factory Board {:keyfn :board/id}))
-
-(def board-size-2 [{:row/id 2
+(def board-size-3 [{:row/id 4
+                    :row/number 4
+                    :row/type :row-type/goal
+                    :row/spaces [{:space/id 10
+                                  :space/number 1
+                                  :space/status :free
+                                  :space/occupied []}]}
+                   {:row/id 3
+                    :row/number 3
+                    :row/type :row-type/spaces
+                    :row/spaces [{:space/id 7
+                                  :space/number 1
+                                  :space/status :free
+                                  :space/occupied []}
+                                 {:space/id 8
+                                  :space/number 2
+                                  :space/status :free
+                                  :space/occupied []}
+                                 {:space/id 9
+                                  :space/number 3
+                                  :space/status :free
+                                  :space/occupied []}]}
+                   {:row/id 2
+                    :row/number 2
+                    :row/type :row-type/spaces
+                    :row/spaces [{:space/id 4
+                                  :space/number 1
+                                  :space/status :free
+                                  :space/occupied []}
+                                 {:space/id 5
+                                  :space/number 2
+                                  :space/status :free
+                                  :space/occupied []}
+                                 {:space/id 6
+                                  :space/number 3
+                                  :space/status :free
+                                  :space/occupied []}]}
+                   {:row/id 1
+                    :row/number 1
+                    :row/type :row-type/spaces
+                    :row/spaces [{:space/id 1
+                                  :space/number 1
+                                  :space/status :free
+                                  :space/occupied []}
+                                 {:space/id 2
+                                  :space/number 2
+                                  :space/status :free
+                                  :space/occupied []}
+                                 {:space/id 3
+                                  :space/number 3
+                                  :space/status :free
+                                  :space/occupied []}]}])
+(def board-size-2 [{:row/id 3
+                    :row/number 3
+                    :row/type :row-type/goal
+                    :row/spaces [{:space/id 5
+                                  :space/number 1
+                                  :space/status :free
+                                  :space/occupied []}]}
+                   {:row/id 2
                     :row/number 2
                     :row/type :row-type/spaces
                     :row/spaces [{:space/id 3
@@ -104,10 +162,14 @@
                                   :space/number 2
                                   :space/status :free
                                   :space/occupied []}]}])
-(defmutation get-board-of-size [{:board/keys [id]}]
+(defmutation get-board-of-size-2 [{:board/keys [id]}]
   (action [{:keys [state]}]
           (swap! state assoc-in [:board/id 1 :board/size] 2)
           (swap! state assoc-in [:board/id id :board/rows] board-size-2)))
+(defmutation get-board-of-size-3 [{:board/keys [id]}]
+  (action [{:keys [state]}]
+          (swap! state assoc-in [:board/id 1 :board/size] 3)
+          (swap! state assoc-in [:board/id id :board/rows] board-size-3)))
 (defonce app (-> (app/fulcro-app) (with-react18)))
 
 (defsc Root [this {:root/keys [board]}]
@@ -117,8 +179,11 @@
   (cond (zero? (:board/size board))
         (dom/div {} "select board size: "
                  (dom/button {:onClick #(comp/transact!
-                                          this [(get-board-of-size {:board/id (:board/id board)})])
-                              :style {:margin "0px 15px"}}  " 2 "))
+                                          this [(get-board-of-size-2 {:board/id (:board/id board)})])
+                              :style {:margin "0px 15px"}}  " 2 ")
+                 (dom/button {:onClick #(comp/transact!
+                                          this [(get-board-of-size-3 {:board/id (:board/id board)})])
+                              :style {:margin "0px 15px"}}  " 3 "))
         :else (dom/div {} (ui-board board))))
 
 (defn ^:export init
