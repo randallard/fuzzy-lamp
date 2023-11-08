@@ -19,31 +19,27 @@
                    (if (= space-status :occupied) "occupied ")
                    (if (= space-status :blocked) "blocked ")
                    (if (= type :row-type/goal) "goal "))})
-(defsc Occupied [this {:occupied/keys [id player steps]}]
+(defsc OccupiedSteps [this {:occupied/keys [id player steps]}]
   {:query [:occupied/id :occupied/player :occupied/steps]
    :ident :occupied/id
    :initial-state {:occupied/id :param/id
                    :occupied/player :param/player
                    :occupied/steps :param/steps}}
   (dom/span {} (str "By " player " at " steps)))
-(def ui-occupied (comp/factory Occupied {:keyfn :occupied/id}))
-(defsc Space [this {:space/keys [id number status occupied]}]
-  {:query [:space/id :space/number :space/status {:space/occupied (comp/get-query Occupied)}]
+(def ui-occupied-steps (comp/factory OccupiedSteps {:keyfn :occupied/id}))
+(defsc Space [this {:space/keys [id number status occupied-steps]}]
+  {:query [:space/id :space/number :space/status {:space/occupied-steps (comp/get-query OccupiedSteps)}]
    :ident :space/id
    :initial-state (fn [{:keys [id number status]}]
-                    (cond (= status :occupied)
-                          {:space/id id
-                           :space/number number
-                           :space/status status
-                           :space/occupied [(comp/get-initial-state Occupied {:id 1
-                                                                              :player :us
-                                                                              :steps [1]})]}
-                          :else {:space/id id
-                                 :space/number number
-                                 :space/status status
-                                 :space/occupied []}))}
+                    {:space/id id
+                     :space/number number
+                     :space/status status
+                     :space/occupied-steps [(comp/get-initial-state OccupiedSteps {:id id
+                                                                                   :player       :us
+                                                                                   :steps        (cond (= status :occupied) [1]
+                                                                                                       :else [])})]})}
   #_(dom/span (space-css nil status) "Space id " id " number " number " "
-            (str status " ") (map ui-occupied occupied) )
+              (str status " ") (map ui-occupied-steps occupied))
   (dom/span (space-css nil status)
             (dom/button {:onClick #(comp/transact! this [(make-blocked {:space/id id})]) :style {:margin "0px 15px"}}
                         " block ")
@@ -55,48 +51,20 @@
   {:query [:row/id :row/number :row/type {:row/spaces (comp/get-query Space)}]
    :ident :row/id
    :initial-state (fn [{:keys [id number type]}]
-                    (cond (= type :row-type/spaces)
-                          {:row/id id
-                           :row/number number
-                           :row/type type
-                           :row/spaces (cond (= number 1) [(comp/get-initial-state Space {:id 1
-                                                                                          :number 1
-                                                                                          :status :free})
-                                                           (comp/get-initial-state Space {:id 2
-                                                                                          :number 2
-                                                                                          :status :occupied})
-                                                           (comp/get-initial-state Space {:id 3
-                                                                                          :number 3
-                                                                                          :status :free})]
-                                             (= number 2) [(comp/get-initial-state Space {:id 4
-                                                                                          :number 1
-                                                                                          :status :free})
-                                                           (comp/get-initial-state Space {:id 5
-                                                                                          :number 2
-                                                                                          :status :free})
-                                                           (comp/get-initial-state Space {:id 6
-                                                                                          :number 3
-                                                                                          :status :free})]
-                                             (= number 3) [(comp/get-initial-state Space {:id 7
-                                                                                          :number 1
-                                                                                          :status :free})
-                                                           (comp/get-initial-state Space {:id 8
-                                                                                          :number 2
-                                                                                          :status :free})
-                                                           (comp/get-initial-state Space {:id 9
-                                                                                          :number 3
-                                                                                          :status :free})])}
-                          :else {:row/id id
-                                 :row/number number
-                                 :row/type type
-                                 :row/spaces [(comp/get-initial-state Space {:id 10
-                                                                             :number 1
-                                                                             :status :free})]}))}
-  (dom/div {} #_(str "Row[" number "] type " type)
-           (dom/div {:style {:padding "5px"}}
-                    (cond
-                      (= type :row-type/goal) (dom/span "GOAL--->GOAL--->GOAL-->" (map ui-space spaces) "<---GOAL<---GOAL---GOAL")
-                      (= type :row-type/spaces) (map ui-space spaces)))))
+                    {:row/id id
+                     :row/number number
+                     :row/type type
+                     :row/spaces [(comp/get-initial-state Space {:id (+ (* (- number 1) 3) 1)
+                                                                 :number 1
+                                                                 :status :free})
+                                  (comp/get-initial-state Space {:id (+ (* (- number 1) 3) 2)
+                                                                 :number 2
+                                                                 :status (cond (= number 1) :occupied
+                                                                               :else :free)})
+                                  (comp/get-initial-state Space {:id (+ (* (- number 1) 3) 3)
+                                                                 :number 3
+                                                                 :status :free})]})}
+  (dom/div {} (dom/div {:style {:padding "5px"}} (map ui-space spaces))))
 
 (def ui-row (comp/factory Row {:keyfn :row/id}))
 (defsc Position [this {:position/keys [id row-number space-number]}]
@@ -155,8 +123,17 @@
 
 (defsc Root [this {:root/keys [board]}]
   {:query [{:root/board (comp/get-query Board)}]
-   :initial-state {:root/board {:id 1 :size 3}}}
-  (dom/div {} (ui-board board)))
+   :initial-state {:root/board {:id 1 :size 0}}}
+  (dom/div {} (ui-board board))
+  #_(cond (zero? (:board/size board))
+        (dom/div {} "select board size: "
+                 (dom/button {:onClick #(comp/transact!
+                                          this [(get-board-of-size-2 {:board/id (:board/id board)})])
+                              :style {:margin "0px 15px"}}  " 2 ")
+                 (dom/button {:onClick #(comp/transact!
+                                          this [(get-board-of-size-3 {:board/id (:board/id board)})])
+                              :style {:margin "0px 15px"}}  " 3 "))
+        :else (dom/div {} (ui-board board))))
 
 (defn ^:export init
   "Shadow-cljs sets this up to be our entry-point function. See shadow-cljs.edn `:init-fn` in the modules of the main build."
@@ -307,58 +284,7 @@
                                             :space/number 3
                                             :space/status :free
                                             :space/occupied []}]}]})
-
 (comment
   (swap! (::app/state-atom app) assoc-in [:occupied/id 1 :occupied/steps] [1 2])
   (app/current-state app)
-
-  ; append a block step to a plan
-  (merge/merge-component! app Step {:step/id 4
-                                    :step/number 4
-                                    :step/blocks [{:block/id 2
-                                                   :block/row-number 2
-                                                   :block/space-number 3}]
-                                    :step/positions []}
-                          :append [:plan/id 1 :plan/steps])
-
-  ; update newly occupied space
-  ; set status to blocked
-  ; this adds a :root/space to the database - not sure that's right
-  (merge/merge-component! app Space {:space/id 6
-                                     :space/status :blocked}
-                          :replace [:root/space])
-
-  ; append :blocked to newly blocked space
-  (merge/merge-component! app Occupied {:occupied/id 4
-                                        :occupied/player :us
-                                        :occupied/steps [4]}
-                          :append [:space/id 6 :space/occupied])
-
-  ; append steps step number to occupied of player occupied space
-  ; --- not the way to be done in live - this adds a :root/occupied to the database - not sure that's right
-  (merge/merge-component! app Occupied {:occupied/id 3
-                                     :occupied/steps [3 4]}
-                          :replace [:root/occupied])
-
-  ; append a movement step to a plan
-  (merge/merge-component! app Step {:step/id 3
-                                    :step/number 3
-                                    :step/blocks []
-                                    :step/positions [{:position/id 2
-                                                      :position/row-number 2
-                                                      :position/space-number 2}]}
-                          :append [:plan/id 1 :plan/steps])
-  ; update newly occupied space
-  ; set status -  - this adds a :root/space to the database - not sure that's right
-  (app/current-state app)
-  (merge/merge-component! app Space {:space/id 5
-                                     :space/status :occupied}
-                          :replace [:root/space])
-  ; append :occupied to newly occupied space
-  (merge/merge-component! app Occupied {:occupied/id 3
-                                        :occupied/player :us
-                                        :occupied/steps [3]}
-                          :append [:space/id 5 :space/occupied])
-
-
   )
