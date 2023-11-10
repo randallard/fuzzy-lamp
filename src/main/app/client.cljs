@@ -13,7 +13,10 @@
                      (swap! state assoc-in [:space/id id :space/status] :blocked)))
 (defmutation make-occupied [{:space/keys [id]}]
   (action [{:keys [state]}]
-          (swap! state assoc-in [:space/id id :space/status] :occupied)))
+          ; set space to occupied
+          (swap! state assoc-in [:space/id id :space/status] :occupied)
+          #_(let [step-number ???]
+              (swap! state assoc-in [:occupied-step/id id :occupied-step/steps] [step-number]))))
 (defn space-css [type space-status]
   {:className (str "space "
                    (if (= space-status :occupied) "occupied ")
