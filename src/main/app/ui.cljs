@@ -74,39 +74,8 @@
        (dom/div {} (dom/div {:style {:padding "5px"}} (map ui-space spaces))))
 
 (def ui-row (comp/factory Row {:keyfn :row/id}))
-(defsc Position [this {:position/keys [id row-number space-number]}]
-       {:query [:position/id :position/row-number :position/space-number]
-        :ident :position/id}
-       (dom/span {} "player at ( row " row-number ", column " space-number " )"))
-(def ui-position (comp/factory Position {:keyfn :position/id}))
-(defsc Block [this {:block/keys [id row-number space-number]}]
-       {:query [:block/id :block/row-number :block/space-number]
-        :ident :block/id}
-       (dom/span {} "block set at ( row " row-number ", column " space-number " )"))
-(def ui-block (comp/factory Block {:keyfn :block/id}))
-(defsc Step [this {:step/keys [id number position-space-id block-space-id]}]
-       {:query [:step/id :step/number :step/position-space-id :step/block-space-id]
-        :ident :step/id
-        :initial-state {:step/id :param/id
-                        :step/number :param/number
-                        :step/position-space-id :param/position-space-id}}
-       (dom/div {} "Step " number " player at space id " position-space-id ))
-(def ui-step (comp/factory Step {:keyfn :step/id}))
-(defsc Plan [this {:plan/keys [id number steps] :as props}]
-       {:query         [:plan/id :plan/number {:plan/steps (comp/get-query Step)}]
-        :ident         :plan/id
-        :initial-state {:plan/id     :param/id
-                        :plan/number :param/number
-                        :plan/steps  [{:id 1
-                                       :number 1
-                                       :position-space-id 2}]
-                        }
-        }
-       (dom/div {} (dom/div {} "Plan Number " number
-                            (dom/ul {} (map ui-step steps)))))
-(def ui-plan (comp/factory Plan {:keyfn :plan/id}))
-(defsc Board [this {:board/keys [id size rows plans] :as props}]
-       {:query [:board/id :board/size {:board/rows (comp/get-query Row)} {:board/plans (comp/get-query Plan)}]
+(defsc Board [this {:board/keys [id size rows] :as props}]
+       {:query [:board/id :board/size {:board/rows (comp/get-query Row)}]
         :ident :board/id
         :initial-state {:board/id :param/id
                         :board/size :param/size
@@ -130,16 +99,11 @@
                                       :type :row-type/spaces}
                                      {:id 1
                                       :number 1
-                                      :type :row-type/spaces}]
-                        :board/plans [{:id 1
-                                       :number 1}]}}
+                                      :type :row-type/spaces}]}}
        (dom/div {:style {:width "100%"}}
                 (dom/div {:style {:float "left" :padding "10px"}}
                          (dom/h2 {} "Board [" id "] Size " size)
-                         (dom/div {} (map ui-row rows)))
-                (dom/div {:style {:float "left" :padding "10px"}}
-                         (dom/h2 {} "Plans")
-                         (dom/div {} (map ui-plan plans)))))
+                         (dom/div {} (map ui-row rows)))))
 
 (def ui-board (comp/factory Board {:keyfn :board/id}))
 
