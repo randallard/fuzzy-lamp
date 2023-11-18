@@ -86,3 +86,5 @@ back in the repl, run
 
 in the console of the browser you should see "up and running!"
 
+get the current state with (app/current-state app) - you might need to send client.cljs to the repl by openning the file 
+and hitting shift-shift to open the command window and typing send to repl - on mine the shortcut is ALT+SHIFT+P 

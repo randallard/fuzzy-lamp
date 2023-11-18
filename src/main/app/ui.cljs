@@ -20,7 +20,7 @@
                    (if (= occupant :blocker) "blocked ")
                    (if (= type :row-type/goal) "goal "))})
 
-(defsc Space [this {:space/keys [id number occupant occupied-steps]}]
+(defsc Space [this {:space/keys [id number occupant occupied-steps]} {:keys [onSpaceStep]}]
        {:query [:space/id :space/number :space/occupant :space/occupied-steps]
         :ident :space/id
         :initial-state (fn [{:keys [id number occupant]}]
@@ -29,16 +29,18 @@
                           :space/occupant occupant
                           :space/occupied-steps (cond (= occupant :player) [1]
                                                       :else [])})}
+       (dom/span (space-css nil occupant) "Space " id " " (str occupied-steps)
+                 (dom/button {:onClick #(onSpaceStep id)} " space "))
        #_(dom/span (space-css nil status) "Space id " id " number " number " "
                    (str status " ") (map ui-occupied-steps occupied))
-       (dom/span (space-css nil occupant)
+       #_(dom/span (space-css nil occupant)
                  (dom/button {:onClick #(comp/transact! this [(make-blocked {:space/id id})]) :style {:margin "0px 15px"}}
                              " block ")
                  (dom/button {:onClick #(comp/transact! this [(make-occupied {:space/id id})]) :style {:margin "0px 15px"}}
                              " move ")))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
-(defsc Row [this {:row/keys [id number type spaces] :as props} {:keys [onStep]}]
+(defsc Row [this {:row/keys [id number type spaces] :as props} {:keys [onSpaceStep]}]
        {:query [:row/id :row/number :row/type {:row/spaces (comp/get-query Space)}]
         :ident :row/id
         :initial-state (fn [{:keys [id number type]}]
@@ -62,7 +64,8 @@
                                                                                   :number 2
                                                                                   :occupant (cond (= number 1) :player
                                                                                                 :else nil)})])})}
-       (dom/div {} (dom/div {:style {:padding "5px"}} (dom/button {:onClick #(onStep number "space-number")} "Row Step") (map ui-space spaces))))
+       (dom/div {} (dom/div {:style {:padding "5px"}}
+                            (map (fn [p] (ui-space (comp/computed p {:onSpaceStep onSpaceStep}))) spaces))))
 
 (def ui-row (comp/factory Row {:keyfn :row/id}))
 (defsc Board [this {:board/keys [id size rows step-number] :as props}]
@@ -97,8 +100,8 @@
                          (dom/h2 {} "Board [" id "] Size " size)
                          (dom/div {}
                                   (let [update-steps
-                                        (fn [row-number space-number] (println "updating " (inc step-number) " from row " row-number space-number))]
-                                    (map (fn [p] (ui-row (comp/computed p {:onStep update-steps}))) rows))))))
+                                        (fn [space-id] (println "create step " (inc step-number) " from space id " space-id))]
+                                    (map (fn [p] (ui-row (comp/computed p {:onSpaceStep update-steps}))) rows))))))
 
 (def ui-board (comp/factory Board {:keyfn :board/id}))
 
