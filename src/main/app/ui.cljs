@@ -9,16 +9,27 @@
 
 (defmutation make-blocked [{:space/keys [id]}]
              (action [{:keys [state]}]
-                     (swap! state assoc-in [:space/id id :space/occupant] :blocker)))
+                     (swap! state assoc-in [:space/id id :space/occupant] :blocker)
+                     (let [player-space-id (get-in @state [:state-data/id :board :state-data/player-space-id])
+                           old-player-space-steps (get-in @state [:space/id player-space-id :space/occupied-steps])
+                           active-board-id (get-in @state [:state-data/id :board :state-data/active-board-id])
+                           old-steps (get-in @state [:space/id id :space/occupied-steps])
+                           new-step-number (inc (get-in @state [:board/id active-board-id :board/step-number]))
+                           new-steps (conj old-steps new-step-number)
+                           new-player-space-steps (conj old-player-space-steps new-step-number)]
+                       (swap! state assoc-in [:space/id player-space-id :space/occupied-steps] new-player-space-steps)
+                       (swap! state assoc-in [:space/id id :space/occupied-steps] new-steps)
+                       (swap! state assoc-in [:board/id active-board-id :board/step-number] new-step-number))))
 (defmutation make-occupied [{:keys [space/id]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:space/id id :space/occupant] :player)
-                     (let [old-steps (get-in @state [:space/id id :space/occupied-steps])
-                           new-step-number (inc (get-in @state [:board/id 1 :board/step-number]))
+                     (let [active-board-id (get-in @state [:state-data/id :board :state-data/active-board-id])
+                           old-steps (get-in @state [:space/id id :space/occupied-steps])
+                           new-step-number (inc (get-in @state [:board/id active-board-id :board/step-number]))
                            new-steps (conj old-steps new-step-number)]
-                       (print (str old-steps new-step-number new-steps))
+                       (swap! state assoc-in [:state-data/id :board :state-data/player-space-id] id)
                        (swap! state assoc-in [:space/id id :space/occupied-steps] new-steps)
-                       (swap! state assoc-in [:board/id 1 :board/step-number] new-step-number))))
+                       (swap! state assoc-in [:board/id active-board-id :board/step-number] new-step-number))))
 (defn space-css [type occupant]
   {:className (str "space "
                    (if (= occupant :player) "occupied ")
@@ -34,17 +45,11 @@
                           :space/occupant occupant
                           :space/occupied-steps (cond (= occupant :player) [1]
                                                       :else [])})}
-       (dom/span (space-css nil occupant) "Space " id " " (str occupied-steps)
+       (dom/span (space-css nil occupant) "Space " id " steps " (str occupied-steps " " occupant)
                  (dom/button {:onClick #(comp/transact! this [(make-occupied {:space/id id})]) :style {:margin "0px 15px"}}
                              " move ")
-                 )
-       #_(dom/span (space-css nil status) "Space id " id " number " number " "
-                   (str status " ") (map ui-occupied-steps occupied))
-       #_(dom/span (space-css nil occupant)
                  (dom/button {:onClick #(comp/transact! this [(make-blocked {:space/id id})]) :style {:margin "0px 15px"}}
-                             " block ")
-                 (dom/button {:onClick #(comp/transact! this [(make-occupied {:space/id id})]) :style {:margin "0px 15px"}}
-                             " move ")))
+                             " block ")))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
 (defsc Row [this {:row/keys [id number type spaces] :as props}]
@@ -118,21 +123,35 @@
 (defmutation get-board-of-size-2 [{:board/keys [id]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:board/id 1 :board/size] 2)
-                     (swap! state assoc-in [:board/id id :board/rows] board-rows-size-2)))
+                     (swap! state assoc-in [:board/id id :board/rows] board-rows-size-2)
+                     (swap! state assoc-in [:state-data/id :board :state-data/state] :planning)))
 (defmutation get-board-of-size-3 [{:board/keys [id]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:board/id 1 :board/size] 3)
-                     (swap! state assoc-in [:board/id id :board/rows] board-rows-size-3)))
-(defsc Root [this {:root/keys [board]}]
-       {:query [{:root/board (comp/get-query Board)}]
-        :initial-state {:root/board {:id 1 :size 0 :step-number 1}}}
-       (dom/div {} (ui-board board))
-       (cond (zero? (:board/size board))
-             (dom/div {} "select board size: "
-                      (dom/button {:onClick #(comp/transact!
-                                               this [(get-board-of-size-2 {:board/id (:board/id board)})])
-                                   :style {:margin "0px 15px"}}  " 2 ")
-                      (dom/button {:onClick #(comp/transact!
-                                               this [(get-board-of-size-3 {:board/id (:board/id board)})])
-                                   :style {:margin "0px 15px"}}  " 3 "))
-             :else (dom/div {} (ui-board board))))
+                     (swap! state assoc-in [:board/id id :board/rows] board-rows-size-3)
+                     (swap! state assoc-in [:state-data/id :board :state-data/state] :planning)))
+(defsc StateData [this {:state-data/keys [id active-board-id player-space-id size state] :as props}]
+  {:query [:state-data/id :state-data/active-board-id :state-data/player-space-id :state-data/size :state-data/state]
+   :ident :state-data/id
+   :initial-state {:state-data/id :param/id
+                   :state-data/active-board-id :param/active-board-id
+                   :state-data/player-space-id :param/player-space-id
+                   :state-data/size :param/size
+                   :state-data/state :param/state}}
+  (dom/div {} (dom/p {} "state data " (str id " size " size " state " state " active board id " active-board-id " current player space " player-space-id)) ))
+(def ui-state-data (comp/factory StateData {:keyfn :state-data/id}))
+(defsc Root [this {:root/keys [board state-data]}]
+       {:query [{:root/board (comp/get-query Board)} {:root/state-data (comp/get-query StateData)}]
+        :initial-state {:root/board {:id 1 :size 0 :step-number 1}
+                        :root/state-data {:id :board :size 0 :active-board-id 1 :player-space-id 2 :state :choose-size}}}
+  (dom/div {}
+           (ui-state-data state-data)
+           (cond (= (:state-data/state state-data) :choose-size)
+                 (dom/div {} "select board size: "
+                          (dom/button {:onClick #(comp/transact!
+                                                   this [(get-board-of-size-2 {:board/id (:board/id board)})])
+                                       :style {:margin "0px 15px"}}  " 2 ")
+                          (dom/button {:onClick #(comp/transact!
+                                                   this [(get-board-of-size-3 {:board/id (:board/id board)})])
+                                       :style {:margin "0px 15px"}}  " 3 "))
+                 :else (ui-board board))))
