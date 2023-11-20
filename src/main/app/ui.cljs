@@ -73,10 +73,12 @@
                           :space/occupied-steps (cond (= occupant :player) [1]
                                                       :else [])})}
        (dom/span (space-css nil occupant)
-                 (if (true? show-move-block-button) (dom/button {:onClick #(comp/transact! this [(make-occupied {:space/id id})]) :style {:margin "0px 15px"}}
-                             " move "))
-                 (if (true? show-move-block-button) (dom/button {:onClick #(comp/transact! this [(make-blocked {:space/id id})]) :style {:margin "0px 15px"}}
-                             " block "))))
+                 (dom/button {:disabled (not show-move-block-button)
+                              :onClick #(comp/transact! this [(make-occupied {:space/id id})]) :style {:margin "0px 15px"}}
+                             " move ")
+                 (dom/button {:disabled (not show-move-block-button)
+                              :onClick #(comp/transact! this [(make-blocked {:space/id id})]) :style {:margin "0px 15px"}}
+                             " block ")))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 
 (defsc Row [this {:row/keys [id number type spaces] :as props}]
