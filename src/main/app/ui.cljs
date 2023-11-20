@@ -31,20 +31,20 @@
                            (swap! state assoc-in [:space/id id :space/occupied-steps] new-steps)
                            (swap! state assoc-in [:board/id active-board-id :board/step-number] new-step-number))
                          ; reset show-move-block-button for each space
-                         (let [rows (get-in @state [:board/id active-board-id :board/rows])]
-                           (print (str " rows " rows))
-                           #_(map #(let [row %] (do-something row) ) rows)
-                           #_(map (fn [row]
-                                  (print (str " row " row))
-                                  (let [row-spaces (get-in @state (conj row :row/spaces))
-                                        row-number (get-in @state (conj row :row/number))]
-                                    (vec (map (fn [row-space]
-                                                (let [space-number (get-in @state (conj row-space :space/number))]
-                                                  (print (str " row space " row-space
-                                                              " row number" row-number
-                                                              " space number " space-number))
-                                                  (swap! state assoc-in (conj row-space :space/show-move-block-button) true )))
-                                              row-spaces)))) rows)))))
+                         (let [rows (get-in @state [:board/id active-board-id :board/rows])
+                               new-state (map (fn [row]
+                                             (let [row-spaces (get-in @state (conj row :row/spaces))
+                                                   row-number (get-in @state (conj row :row/number))
+                                                   is-adjascent true]
+                                               (vec (map (fn [row-space] #_(str " row space " row-space
+                                                                             " row number" row-number
+                                                                             " space number " space-number)
+                                                           (let [space-number (get-in @state (conj row-space :space/number))]
+                                                             (swap! state assoc-in (conj row-space :space/show-move-block-button)
+                                                                    is-adjascent )))
+                                                         row-spaces)))) rows)]
+                           (print (str "new state " new-state))
+                           ))))
 (defn space-css [type occupant]
   {:className (str "space "
                    (if (= occupant :player) "occupied ")
