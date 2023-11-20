@@ -31,15 +31,25 @@
                            (swap! state assoc-in [:space/id id :space/occupied-steps] new-steps)
                            (swap! state assoc-in [:board/id active-board-id :board/step-number] new-step-number))
                          ; reset show-move-block-button for each space
-                         (let [rows (get-in @state [:board/id active-board-id :board/rows])
+                         (let [clicked-space-row (get-in @state [:space/id id :space/row])
+                               clicked-space-number (get-in @state [:space/id id :space/number])
+                               rows (get-in @state [:board/id active-board-id :board/rows])
                                new-state (map (fn [row]
                                              (let [row-spaces (get-in @state (conj row :row/spaces))
-                                                   row-number (get-in @state (conj row :row/number))
-                                                   is-adjascent true]
+                                                   row-number (get-in @state (conj row :row/number))]
                                                (vec (map (fn [row-space] #_(str " row space " row-space
                                                                              " row number" row-number
                                                                              " space number " space-number)
-                                                           (let [space-number (get-in @state (conj row-space :space/number))]
+                                                           (let [space-number (get-in @state (conj row-space :space/number))
+                                                                 is-in-same-row (= clicked-space-row row-number)
+                                                                 is-one-space-away (or (= 1 (- clicked-space-number space-number))
+                                                                                       (= 1 (- space-number clicked-space-number)))
+                                                                 is-one-row-away (or (= 1 (- clicked-space-row row-number))
+                                                                                     (= 1 (- row-number clicked-space-row)))
+                                                                 is-same-space-number (= clicked-space-number space-number)
+                                                                 is-adjascent (cond (and is-in-same-row is-one-space-away) true
+                                                                                    (and is-one-row-away is-same-space-number) true
+                                                                                    :else false)]
                                                              (swap! state assoc-in (conj row-space :space/show-move-block-button)
                                                                     is-adjascent )))
                                                          row-spaces)))) rows)]
@@ -51,13 +61,14 @@
                    (if (= occupant :blocker) "blocked ")
                    (if (= type :row-type/goal) "goal "))})
 
-(defsc Space [this {:space/keys [id number occupant occupied-steps show-move-block-button]}]
-       {:query [:space/id :space/number :space/occupant :space/occupied-steps :space/show-move-block-button]
+(defsc Space [this {:space/keys [id number occupant occupied-steps show-move-block-button row]}]
+       {:query [:space/id :space/number :space/row :space/occupant :space/occupied-steps :space/show-move-block-button]
         :ident :space/id
-        :initial-state (fn [{:keys [id number occupant show-move-block-button]}]
+        :initial-state (fn [{:keys [id number occupant show-move-block-button row]}]
                          {:space/id id
                           :space/show-move-block-button show-move-block-button
                           :space/number number
+                          :space/row row
                           :space/occupant occupant
                           :space/occupied-steps (cond (= occupant :player) [1]
                                                       :else [])})}
@@ -78,28 +89,33 @@
                      :row/spaces (let [row-number number] (cond (> id 3) [(comp/get-initial-state Space {
                                                                                 :id             (+ (* (- row-number 1) 3) 1)
                                                                                 :number         1
+                                                                                :row row-number
                                                                                 :occupant       nil
                                                                                 :show-move-block-button (cond (= row-number 1) true
                                                                                                               :else false)
                                                                                 })
                                                  (comp/get-initial-state Space {:id       (+ (* (- row-number 1) 3) 2)
                                                                                 :number   2
+                                                                                :row row-number
                                                                                 :show-move-block-button (cond (= row-number 2) true
                                                                                                               :else false)
                                                                                 :occupant (cond (= row-number 1) :player
                                                                                                 :else nil)})
                                                  (comp/get-initial-state Space {:id       (+ (* (- row-number 1) 3) 3)
                                                                                 :number   3
+                                                                                :row row-number
                                                                                 :show-move-block-button (cond (= row-number 1) true
                                                                                                               :else false)
                                                                                 :occupant nil})]
                                        :else [(comp/get-initial-state Space {:id       (+ (* (- row-number 1) 3) 1)
                                                                              :number   1
+                                                                             :row row-number
                                                                              :show-move-block-button (cond (= row-number 1) true
                                                                                                            :else false)
                                                                              :occupant nil})
                                               (comp/get-initial-state Space {:id       (+ (* (- row-number 1) 3) 2)
                                                                              :number   2
+                                                                             :row row-number
                                                                              :show-move-block-button (cond (= row-number 2) true
                                                                                                            :else false)
                                                                              :occupant (cond (= row-number 1) :player
