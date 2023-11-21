@@ -24,7 +24,8 @@
 (defmutation make-occupied [{:keys [space/id]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:space/id id :space/occupant] :player)
-                     (let [active-board-id (get-in @state [:state-data/id :board :state-data/active-board-id])]
+                     (let [active-board-id (get-in @state [:state-data/id :board :state-data/active-board-id])
+                           board-size (get-in @state [:board/id active-board-id :board/size])]
                          (let [old-steps (get-in @state [:space/id id :space/occupied-steps])
                                new-step-number (inc (get-in @state [:board/id active-board-id :board/step-number]))
                                new-steps (conj old-steps new-step-number)]
@@ -50,9 +51,10 @@
                                                                  is-same-space-number (= clicked-space-number space-number)
                                                                  is-adjascent (cond (and is-in-same-row is-one-space-away) true
                                                                                     (and is-one-row-away is-same-space-number) true
-                                                                                    :else false)]
+                                                                                    :else false)
+                                                                 goal-reached (< board-size clicked-space-row)]
                                                              (swap! state assoc-in (conj row-space :space/show-move-block-button)
-                                                                    (and is-adjascent (not is-blocked)))))
+                                                                    (and is-adjascent (not is-blocked) (not goal-reached)))))
                                                          row-spaces)))) rows)] (str "new state " new-state)))))
 (defn space-css [type occupant]
   {:className (str "space "
