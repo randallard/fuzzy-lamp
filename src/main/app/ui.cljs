@@ -18,7 +18,8 @@
                            new-steps (conj old-steps new-step-number)
                            new-player-space-steps (conj old-player-space-steps new-step-number)]
                        (swap! state assoc-in [:space/id player-space-id :space/occupied-steps] new-player-space-steps)
-                       (swap! state assoc-in [:space/id id :space/occupied-steps] new-steps)
+                       (swap! state assoc-in [:space/id id :space/blocked-step] new-step-number)
+                       (swap! state assoc-in [:space/id id :space/show-move-block-button] false)
                        (swap! state assoc-in [:board/id active-board-id :board/step-number] new-step-number))))
 (defmutation make-occupied [{:keys [space/id]}]
              (action [{:keys [state]}]
@@ -37,10 +38,10 @@
                                new-state (map (fn [row]
                                              (let [row-spaces (get-in @state (conj row :row/spaces))
                                                    row-number (get-in @state (conj row :row/number))]
-                                               (vec (map (fn [row-space] #_(str " row space " row-space
-                                                                             " row number" row-number
-                                                                             " space number " space-number)
+                                               (vec (map (fn [row-space]
                                                            (let [space-number (get-in @state (conj row-space :space/number))
+                                                                 occupant (get-in @state (conj row-space :space/occupant))
+                                                                 is-blocked (= occupant :blocker)
                                                                  is-in-same-row (= clicked-space-row row-number)
                                                                  is-one-space-away (or (= 1 (- clicked-space-number space-number))
                                                                                        (= 1 (- space-number clicked-space-number)))
@@ -51,18 +52,16 @@
                                                                                     (and is-one-row-away is-same-space-number) true
                                                                                     :else false)]
                                                              (swap! state assoc-in (conj row-space :space/show-move-block-button)
-                                                                    is-adjascent )))
-                                                         row-spaces)))) rows)]
-                           (print (str "new state " new-state))
-                           ))))
+                                                                    (and is-adjascent (not is-blocked)))))
+                                                         row-spaces)))) rows)] (str "new state " new-state)))))
 (defn space-css [type occupant]
   {:className (str "space "
                    (if (= occupant :player) "occupied ")
                    (if (= occupant :blocker) "blocked ")
                    (if (= type :row-type/goal) "goal "))})
 
-(defsc Space [this {:space/keys [id number occupant occupied-steps show-move-block-button row]}]
-       {:query [:space/id :space/number :space/row :space/occupant :space/occupied-steps :space/show-move-block-button]
+(defsc Space [this {:space/keys [id number occupant occupied-steps blocked-step show-move-block-button row]}]
+       {:query [:space/id :space/number :space/row :space/occupant :space/occupied-steps :space/blocked-step :space/show-move-block-button]
         :ident :space/id
         :initial-state (fn [{:keys [id number occupant show-move-block-button row]}]
                          {:space/id id
@@ -76,6 +75,7 @@
                  (dom/button {:disabled (not show-move-block-button)
                               :onClick #(comp/transact! this [(make-occupied {:space/id id})]) :style {:margin "0px 15px"}}
                              " move ")
+                 (str occupant " occupied " occupied-steps " blocked " blocked-step)
                  (dom/button {:disabled (not show-move-block-button)
                               :onClick #(comp/transact! this [(make-blocked {:space/id id})]) :style {:margin "0px 15px"}}
                              " block ")))
@@ -195,7 +195,7 @@
                         :root/state-data {:id :board :size 0 :active-board-id 1 :player-space-id 2 :state :choose-size}}}
   (dom/div {}
            (ui-state-data state-data)
-           (let [get-new-board-button (fn [{:keys [size label]}]
+           (let [get-new-board-button (fn [{:keys [size label start-id]}]
                                         (print "get new board size " size " label " label)
                                         (dom/button {:onClick #(comp/transact!
                                                              this [(cond (= size 2) (get-board-of-size-2 {:board/id (:board/id board)})
