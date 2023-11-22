@@ -124,7 +124,7 @@
                                                                                                            :else false)
                                                                              :occupant (cond (= row-number 1) :player
                                                                                              :else nil)})]))})}
-       (dom/div {} (dom/div {:style {:padding "5px"}} (map ui-space spaces))))
+       (dom/div {} (str "row id " id " number " number) (dom/div {:style {:padding "5px"}} (map ui-space spaces))))
 (def ui-row (comp/factory Row {:keyfn :row/id}))
 
 (defsc Board [this {:board/keys [id size rows step-number] :as props}]
@@ -167,16 +167,106 @@
 (def board-rows-size-2 [[:row/id 3]
                         [:row/id 2]
                         [:row/id 1]])
+(defn new-board-rows-size-2 [last-id] [(let [id (+ last-id 3)
+                                             last-space-id 100
+                                             row-number 3
+                                             row-type :row-type/goal] {:row/id id
+                                                                       :row/number row-number
+                                                                       :row/type row-type
+                                                                       :row/spaces [(let [id (+ last-space-id 1)
+                                                                                          show-move-block-button false
+                                                                                          number 1
+                                                                                          row row-number
+                                                                                          occupant nil
+                                                                                          occupied-steps []] {:space/id id
+                                                                                                              :space/show-move-block-button show-move-block-button
+                                                                                                              :space/number number
+                                                                                                              :space/row row
+                                                                                                              :space/occupant occupant
+                                                                                                              :space/occupied-steps occupied-steps})
+                                                                                    (let [id (+ last-space-id 2)
+                                                                                          show-move-block-button false
+                                                                                          number 2
+                                                                                          row row-number
+                                                                                          occupant nil
+                                                                                          occupied-steps []] {:space/id id
+                                                                                                              :space/show-move-block-button show-move-block-button
+                                                                                                              :space/number number
+                                                                                                              :space/row row
+                                                                                                              :space/occupant occupant
+                                                                                                              :space/occupied-steps occupied-steps})]})
+                                       (let [id (+ last-id 2)
+                                             last-space-id 102
+                                             row-number 2
+                                             row-type :row-type/spaces] {:row/id id
+                                                                         :row/number row-number
+                                                                         :row/type row-type
+                                                                         :row/spaces [(let [id (+ last-space-id 1)
+                                                                                            show-move-block-button false
+                                                                                            number 1
+                                                                                            row row-number
+                                                                                            occupant nil
+                                                                                            occupied-steps []] {:space/id id
+                                                                                                                :space/show-move-block-button show-move-block-button
+                                                                                                                :space/number number
+                                                                                                                :space/row row
+                                                                                                                :space/occupant occupant
+                                                                                                                :space/occupied-steps occupied-steps})
+                                                                                      (let [id (+ last-space-id 2)
+                                                                                            show-move-block-button false
+                                                                                            number 2
+                                                                                            row row-number
+                                                                                            occupant nil
+                                                                                            occupied-steps []] {:space/id id
+                                                                                                                :space/show-move-block-button show-move-block-button
+                                                                                                                :space/number number
+                                                                                                                :space/row row
+                                                                                                                :space/occupant occupant
+                                                                                                                :space/occupied-steps occupied-steps})]})
+                                       (let [id (+ last-id 1)
+                                             last-space-id 104
+                                             row-number 1
+                                             row-type :row-type/spaces] {:row/id id
+                                                                         :row/number row-number
+                                                                         :row/type row-type
+                                                                         :row/spaces [(let [id (+ last-space-id 1)
+                                                                                            show-move-block-button false
+                                                                                            number 1
+                                                                                            row row-number
+                                                                                            occupant nil
+                                                                                            occupied-steps []] {:space/id id
+                                                                                                                :space/show-move-block-button show-move-block-button
+                                                                                                                :space/number number
+                                                                                                                :space/row row
+                                                                                                                :space/occupant occupant
+                                                                                                                :space/occupied-steps occupied-steps})
+                                                                                      (let [id (+ last-space-id 2)
+                                                                                            show-move-block-button false
+                                                                                            number 2
+                                                                                            row row-number
+                                                                                            occupant nil
+                                                                                            occupied-steps []] {:space/id id
+                                                                                                                :space/show-move-block-button show-move-block-button
+                                                                                                                :space/number number
+                                                                                                                :space/row row
+                                                                                                                :space/occupant occupant
+                                                                                                                :space/occupied-steps occupied-steps})]})
+                                       ])
 (defmutation get-board-of-size-2 [{:board/keys [id]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:state-data/id :board :state-data/size] 2)
-                     (swap! state assoc-in [:board/id 1 :board/size] 2)
-                     (swap! state assoc-in [:board/id id :board/rows] board-rows-size-2)
+                     #_(swap! state assoc-in [:board/id id :board/rows] board-rows-size-2)
+                     #_(swap! state assoc-in [:board/id id :board/rows] (new-board-rows-size-2 7))
+                     (let [last-row-id 7]
+                       (merge/merge-component! app Board {:id (+ 1 id) :size 0 :step-number 1
+                                                          :board/rows (new-board-rows-size-2 last-row-id)})
+                                      :replace [:root/board])
+                     (swap! state assoc-in [:board/id (+ 1 id) :board/size] 2)
                      (swap! state assoc-in [:state-data/id :board :state-data/state] :planning)))
 (defmutation get-board-of-size-3 [{:board/keys [id]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:state-data/id :board :state-data/size] 3)
-                     (swap! state assoc-in [:board/id 1 :board/size] 3)
+                     (swap! state assoc-in [:board/id id :board/size] 3)
                      (swap! state assoc-in [:board/id id :board/rows] board-rows-size-3)
                      (swap! state assoc-in [:state-data/id :board :state-data/state] :planning)))
 

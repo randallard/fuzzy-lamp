@@ -86,3 +86,5 @@ back in the repl, run
 
 in the console of the browser you should see "up and running!"
 
+might need to (in-ns 'app.client)
+
