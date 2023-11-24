@@ -6,8 +6,6 @@
     [com.fulcrologic.fulcro.algorithms.merge :as merge]
     [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
     [com.fulcrologic.fulcro.algorithms.data-targeting :as targeting]))
-
-
 (defmutation make-blocked [{:space/keys [id]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:space/id id :space/occupant] :blocker)
@@ -155,12 +153,12 @@
                                       :type :row-type/spaces}]}}
        (dom/div {:style {:width "100%"}}
                 (dom/div {:style {:float "left" :padding "10px"}}
-                         (dom/h2 {} "Board [" id "] Size " size)
+                         #_(dom/h2 {} "Board [" id "] Size " size)
                          (dom/div {} (map ui-row rows)
                                   (dom/button {:onClick #(comp/transact! this `[(make-active {:board/id ~id})])
-                                               :style {:margin "0px 15px"}} "make active")
+                                               :style {:margin "0px 15px"}} "make this the player board")
                                   (dom/button {:onClick #(print "play board id " id)
-                                               :style {:margin "0px 15px"}} "play against the active board")))))
+                                               :style {:margin "0px 15px"}} "play against the player board")))))
 (def ui-board (comp/factory Board {:keyfn :board/id}))
 (defmutation make-active [{:board/keys [id]}]
   (action [{:keys [state]}]
@@ -456,18 +454,27 @@
                    :state-data/player-space-id :param/player-space-id
                    :state-data/size :param/size
                    :state-data/state :param/state}}
-  (dom/div {} (dom/p {} "state data " (str id " size " size " state " state " active board id " active-id " current player space " player-space-id)) ))
+  #_(dom/div {} (dom/p {} "state data " (str id " size " size " state " state " player board id " active-id " current player space " player-space-id)) ))
 (def ui-state-data (comp/factory StateData {:keyfn :state-data/id}))
 (defsc SavedBoards [this {:saved-boards/keys [board-size boards] :as props}]
   {:query [:saved-boards/board-size {:saved-boards/boards (comp/get-query Board)}]
    :ident :saved-boards/board-size
    :initial-state {:saved-boards/board-size :param/board-size
                    :saved-boards/boards []}}
-  (dom/div {} (dom/h2 {} "board size " board-size) (map ui-board boards)))
+  (dom/div {:style {:clear "left"}} (dom/h2 {} "board size " board-size) (map ui-board boards)))
 (def ui-saved-boards (comp/factory SavedBoards {:keyfn :saved-boards/board-size}))
-(defsc Root [this {:root/keys [board state-data saved-boards]}]
-       {:query [{:root/board (comp/get-query Board)} {:root/state-data (comp/get-query StateData)}
-                {:root/saved-boards (comp/get-query SavedBoards)}]
+(defsc Round [this {:round/keys [id number player-board opponent-board] :as props}]
+  {:query [:round/id :round/number :round/player-board :round/opponent-board]
+   :ident :round/id}
+  (dom/div {} (dom/h3 {} "Round[" id "] Number " number)
+           (dom/div "player board" (ui-board player-board))
+           (dom/div "opponent board" (ui-board opponent-board))))
+(def ui-round (comp/factory Round {:keyfn :round/id}))
+(defsc Root [this {:root/keys [board state-data saved-boards round]}]
+       {:query [{:root/board (comp/get-query Board)}
+                {:root/state-data (comp/get-query StateData)}
+                {:root/saved-boards (comp/get-query SavedBoards)}
+                {:root/round (comp/get-query Round)}]
         :initial-state {:root/board {:id 1 :size 0 :step-number 1}
                         :root/state-data {:id :board :size 0 :active-id 1 :player-space-id 2 :state :choose-size}
                         :root/saved-boards [{:board-size 2} {:board-size 3}]}}
@@ -495,5 +502,7 @@
                                   (dom/button {:onClick #(comp/transact! this [(save-board {:board/id (:state-data/active-id state-data)})])
                                                :style {:margin "0px 15px"}} "save board"))
                          (ui-board board)
+                         (dom/div {} (dom/h1 {} "Rounds")
+                                  (ui-round round))
                          (dom/div {:style {:clear "left"}} (dom/h1 {} "Saved Boards")
                                   (map ui-saved-boards saved-boards)))))))
