@@ -153,11 +153,11 @@
                                       :type :row-type/spaces}]}}
        (dom/div {:style {:width "100%"}}
                 (dom/div {:style {:float "left" :padding "10px"}}
-                         #_(dom/h2 {} "Board [" id "] Size " size)
+                         (dom/h2 {} "Board [" id "] Size " size)
                          (dom/div {} (map ui-row rows)
                                   (dom/button {:onClick #(comp/transact! this `[(make-active {:board/id ~id})])
                                                :style {:margin "0px 15px"}} "make this the player board")
-                                  (dom/button {:onClick #(print "play board id " id)
+                                  (dom/button {:onClick #(comp/transact! this `[(init-round {:board/id ~id})])
                                                :style {:margin "0px 15px"}} "play against the player board")))))
 (def ui-board (comp/factory Board {:keyfn :board/id}))
 (defmutation make-active [{:board/keys [id]}]
@@ -464,12 +464,36 @@
   (dom/div {:style {:clear "left"}} (dom/h2 {} "board size " board-size) (map ui-board boards)))
 (def ui-saved-boards (comp/factory SavedBoards {:keyfn :saved-boards/board-size}))
 (defsc Round [this {:round/keys [id number player-board opponent-board] :as props}]
-  {:query [:round/id :round/number :round/player-board :round/opponent-board]
+  {:query [:round/id
+           :round/number
+           {:round/player-board (comp/get-query Board)}
+           {:round/opponent-board (comp/get-query Board)}]
    :ident :round/id}
   (dom/div {} (dom/h3 {} "Round[" id "] Number " number)
+           (print (str "player board " player-board "opponent board " opponent-board))
            (dom/div "player board" (ui-board player-board))
            (dom/div "opponent board" (ui-board opponent-board))))
 (def ui-round (comp/factory Round {:keyfn :round/id}))
+#_(defmutation init-round [{:board/keys [id]}]
+  (action [{:keys [state]}]
+          (print "init-round board id")))
+(defmutation init-round [{:keys [board/id]}]
+  (action [{:keys [state]}]
+          (let [last-round-id    (last (sort (filter number? (keys (map #(identity %) (get-in @state [:round/id]))))))
+                new-round-id (inc last-round-id)
+                new-round-number 1
+                player-board-id (get-in @state [:state-data/id :board :state-data/active-id])
+                player-board (get-in @state [:board/id player-board-id])
+                opponent-board (get-in @state [:board/id id])
+                round {:round/id new-round-id
+                       :round/number new-round-number
+                       :round/player-board player-board
+                       :round/opponent-board opponent-board}]
+            (print (str " round " round))
+            (merge/merge-component! app Round round
+                                      :replace [:root/round])
+            #_(merge/merge-component! app Round round
+                                      :append [:match/id current-match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards round]}]
        {:query [{:root/board (comp/get-query Board)}
                 {:root/state-data (comp/get-query StateData)}
