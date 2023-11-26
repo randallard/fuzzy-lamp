@@ -151,7 +151,7 @@
                                      {:id 1
                                       :number 1
                                       :type :row-type/spaces}]}}
-       (dom/div {:style {:width "100%"}}
+       (dom/div {}
                 (dom/div {:style {:float "left" :padding "10px"}}
                          (dom/h2 {} "Board [" id "] Size " size)
                          (dom/div {} (map ui-row rows)
@@ -471,14 +471,19 @@
            {:round/player-board (comp/get-query Board)}
            {:round/opponent-board (comp/get-query Board)}]
    :ident :round/id}
-  (dom/div {} (dom/h3 {} "Round[" id "] Number " number)
+  (dom/div {:style {:clear "left"}} (dom/h3 {} "Round[" id "] Number " number)
            (print (str "player board " player-board "opponent board " opponent-board))
            (dom/div "player board" (ui-board player-board))
            (dom/div "opponent board" (ui-board opponent-board))))
 (def ui-round (comp/factory Round {:keyfn :round/id}))
-#_(defmutation init-round [{:board/keys [id]}]
-  (action [{:keys [state]}]
-          (print "init-round board id")))
+(defsc Match [this {:match/keys [id rounds] :as props}]
+  {:query [:match/id {:match/rounds (comp/get-query Round)}]
+   :ident :match/id
+   :initial-state {:match/id :param/id
+                   :match/rounds []}}
+  (dom/div {:style {:clear "left"}} (dom/h3 {} "Match " id )
+           (map ui-round rounds)))
+(def ui-match (comp/factory Match {:keyfn :match/id}))
 (defmutation init-round [{:keys [board/id]}]
   (action [{:keys [state]}]
           (let [last-round-id    (last (sort (filter number? (keys (map #(identity %) (get-in @state [:round/id]))))))
@@ -491,19 +496,19 @@
                        :round/number new-round-number
                        :round/player-board player-board
                        :round/opponent-board opponent-board}]
-            (print (str " round " round))
-            (merge/merge-component! app Round round
-                                      :replace [:root/round])
             #_(merge/merge-component! app Round round
-                                      :append [:match/id current-match-id :match/rounds]))))
-(defsc Root [this {:root/keys [board state-data saved-boards round]}]
+                                      :replace [:root/round])
+            (merge/merge-component! app Round round
+                                      :append [:match/id 1 :match/rounds]))))
+(defsc Root [this {:root/keys [board state-data saved-boards match]}]
        {:query [{:root/board (comp/get-query Board)}
                 {:root/state-data (comp/get-query StateData)}
                 {:root/saved-boards (comp/get-query SavedBoards)}
-                {:root/round (comp/get-query Round)}]
+                {:root/match (comp/get-query Match)}]
         :initial-state {:root/board {:id 1 :size 0 :step-number 1}
                         :root/state-data {:id :board :size 0 :active-id 1 :player-space-id 2 :state :choose-size}
-                        :root/saved-boards [{:board-size 2} {:board-size 3}]}}
+                        :root/saved-boards [{:board-size 2} {:board-size 3}]
+                        :root/match {:id 1}}}
   (dom/div {}
            (ui-state-data state-data)
            (let [get-new-board-button (fn [{:keys [id size label]}]
@@ -528,7 +533,7 @@
                                   (dom/button {:onClick #(comp/transact! this [(save-board {:board/id (:state-data/active-id state-data)})])
                                                :style {:margin "0px 15px"}} "save board"))
                          (ui-board board)
-                         (dom/div {} (dom/h1 {} "Rounds")
-                                  (ui-round round))
+                         (dom/div {} (dom/h1 {} "Match")
+                                  (ui-match match))
                          (dom/div {:style {:clear "left"}} (dom/h1 {} "Saved Boards")
                                   (map ui-saved-boards saved-boards)))))))
