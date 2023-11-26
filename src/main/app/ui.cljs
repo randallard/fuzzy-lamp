@@ -427,19 +427,21 @@
 (defmutation get-board [{:board/keys [id size]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:state-data/id :board :state-data/size] size)
-                     (let [last-row-id    (last (sort (filter number? (keys (map #(identity %) (get-in @state [:row/id]))))))
+                     (let [new-board-id    (inc (last (sort (filter number? (keys (map #(identity %) (get-in @state [:board/id])))))))
+                           last-row-id    (last (sort (filter number? (keys (map #(identity %) (get-in @state [:row/id]))))))
                            space-init-id  (last (sort (filter number? (keys (map #(identity %) (get-in @state [:space/id]))))))]
-                       (merge/merge-component! app Board {:board/id id :board/size size :board/step-number 0
+                       (merge/merge-component! app Board {:board/id new-board-id :board/size size :board/step-number 0
                                                           :board/rows (new-board-rows last-row-id space-init-id size)}
-                                               :replace [:root/board]))
-                     (swap! state assoc-in [:state-data/id :board :state-data/state] :planning)
-                     (swap! state assoc-in [:state-data/id :board :state-data/active-id] id)
-                     (let [rows (get-in @state [:board/id id :board/rows])
-                           start-row (filter (fn [row] (= 1 (get-in @state (conj row :row/number)))) rows)
-                           start-spaces (get-in @state (conj (first start-row) :row/spaces))
-                           start-space (filter (fn [space] (= 2 (get-in @state (conj space :space/number)))) start-spaces)
-                           start-space-id (get-in @state (conj (first start-space) :space/id))]
-                       (swap! state assoc-in [:state-data/id :board :state-data/player-space-id] start-space-id))))
+                                               :replace [:root/board])
+                       (swap! state assoc-in [:state-data/id :board :state-data/state] :planning)
+                       (swap! state assoc-in [:state-data/id :board :state-data/active-id] new-board-id)
+                       (let [rows (get-in @state [:board/id new-board-id :board/rows])
+                             start-row (filter (fn [row] (= 1 (get-in @state (conj row :row/number)))) rows)
+                             start-spaces (get-in @state (conj (first start-row) :row/spaces))
+                             start-space (filter (fn [space] (= 2 (get-in @state (conj space :space/number)))) start-spaces)
+                             start-space-id (get-in @state (conj (first start-space) :space/id))]
+                         (swap! state assoc-in [:state-data/id :board :state-data/player-space-id] start-space-id))))
+                     )
 (defmutation save-board [{:board/keys [id]}]
   (action [{:keys [state]}]
           (let [board (get-in @state [:board/id id])
@@ -513,12 +515,12 @@
                                                                                        " ")))]
              (cond (= (:state-data/state state-data) :choose-size)
                  (dom/div {} "select board size: "
-                          (get-new-board-button {:id (inc (:board/id board)) :size 2})
-                          (get-new-board-button {:id (inc (:board/id board)) :size 3}))
+                          (get-new-board-button {:id (:board/id board) :size 2})
+                          (get-new-board-button {:id (:board/id board) :size 3}))
                  :else (dom/div
                          (dom/div {}
-                           (get-new-board-button {:id (inc (:board/id board)) :size 2 :label "new board size 2"})
-                           (get-new-board-button {:id (inc (:board/id board)) :size 3 :label "new board size 3"}))
+                           (get-new-board-button {:id (:board/id board) :size 2 :label "new board size 2"})
+                           (get-new-board-button {:id (:board/id board) :size 3 :label "new board size 3"}))
                          (dom/div {:style {:margin "15px"}}
                                   (dom/button {:onClick #(comp/transact! this [(make-occupied {:space/id (:state-data/player-space-id state-data)})])
                                                :style {:margin "0px 15px"}} "start")
