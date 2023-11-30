@@ -486,9 +486,11 @@
 (def ui-match (comp/factory Match {:keyfn :match/id}))
 (defmutation init-round [{:keys [board/id]}]
   (action [{:keys [state]}]
-          (let [last-round-id    (last (sort (filter number? (keys (map #(identity %) (get-in @state [:round/id]))))))
+          (let [match-id 1
+                last-round-id (last (sort (filter number? (keys (map #(identity %) (get-in @state [:round/id]))))))
+                last-round-number (get-in @state [:round/id last-round-id :round/number])
                 new-round-id (inc last-round-id)
-                new-round-number 1
+                new-round-number (inc last-round-number)
                 player-board-id (get-in @state [:state-data/id :board :state-data/active-id])
                 player-board (get-in @state [:board/id player-board-id])
                 opponent-board (get-in @state [:board/id id])
@@ -499,7 +501,7 @@
             #_(merge/merge-component! app Round round
                                       :replace [:root/round])
             (merge/merge-component! app Round round
-                                      :append [:match/id 1 :match/rounds]))))
+                                      :append [:match/id match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards match]}]
        {:query [{:root/board (comp/get-query Board)}
                 {:root/state-data (comp/get-query StateData)}
