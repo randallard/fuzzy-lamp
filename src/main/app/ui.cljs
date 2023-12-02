@@ -465,16 +465,22 @@
                    :saved-boards/boards []}}
   (dom/div {:style {:clear "left"}} (dom/h2 {} "board size " board-size) (map ui-board boards)))
 (def ui-saved-boards (comp/factory SavedBoards {:keyfn :saved-boards/board-size}))
+(defn get-score [{:keys [player-board opponent-board]}]
+  (print "player")
+  (print (str player-board))
+  (print "opponent")
+  (print (str opponent-board))
+  (str "Player Points: " " Opponent Points: "))
 (defsc Round [this {:round/keys [id number player-board opponent-board] :as props}]
   {:query [:round/id
            :round/number
            {:round/player-board (comp/get-query Board)}
            {:round/opponent-board (comp/get-query Board)}]
    :ident :round/id}
-  (dom/div {:style {:clear "left"}} (dom/h3 {} "Round[" id "] Number " number)
-           (print (str "player board " player-board "opponent board " opponent-board))
-           (dom/div "player board" (ui-board player-board))
-           (dom/div "opponent board" (ui-board opponent-board))))
+  (dom/div {:style {:float "left" :clear "left" :border "thin solid black"}}
+           (dom/h3 {} "Round[" id "] Number " number " - " (get-score {:player-board player-board :opponent-board opponent-board}))
+           (dom/div {:style {:float "left"}} "player board" (ui-board player-board))
+           (dom/div {:style {:float "left"}} "opponent board" (ui-board opponent-board))))
 (def ui-round (comp/factory Round {:keyfn :round/id}))
 (defsc Match [this {:match/keys [id rounds] :as props}]
   {:query [:match/id {:match/rounds (comp/get-query Round)}]
@@ -535,7 +541,7 @@
                                   (dom/button {:onClick #(comp/transact! this [(save-board {:board/id (:state-data/active-id state-data)})])
                                                :style {:margin "0px 15px"}} "save board"))
                          (ui-board board)
-                         (dom/div {} (dom/h1 {} "Match")
+                         (dom/div {:style {:clear "left"}} (dom/h1 {} "Match")
                                   (ui-match match))
-                         (dom/div {:style {:clear "left"}} (dom/h1 {} "Saved Boards")
+                         (dom/div {} (dom/h1 {:style {:clear "left"}} "Saved Boards")
                                   (map ui-saved-boards saved-boards)))))))
