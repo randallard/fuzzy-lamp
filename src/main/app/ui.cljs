@@ -471,15 +471,28 @@
   (print "opponent")
   (print (str opponent-board))
   (str "Player Points: " " Opponent Points: "))
-(defsc Round [this {:round/keys [id number player-board opponent-board] :as props}]
+(defsc ResultsRow [this {:results-row/keys [id] :as props}]
+  {:query [:results-row/id]
+   :ident :results-row/id}
+  (dom/div {:style {:float "left"}} (dom/h4 {} "results row")))
+(def ui-results-row (comp/factory ResultsRow {:keyfn :results-row/id}))
+(defsc ResultsBoard [this {:results-board/keys [id results-rows] :as props}]
+  {:query [:results-board/id {:results-board/results-rows (comp/get-query ResultsRow)}]
+   :ident :results-board/id}
+  (dom/div {:style {:float "left"}} (dom/h4 {} "results board")
+           (map ui-results-row results-rows)))
+(def ui-results-board (comp/factory ResultsBoard {:keyfn :results-board/id}))
+(defsc Round [this {:round/keys [id number player-board opponent-board results-board] :as props}]
   {:query [:round/id
            :round/number
            {:round/player-board (comp/get-query Board)}
-           {:round/opponent-board (comp/get-query Board)}]
+           {:round/opponent-board (comp/get-query Board)}
+           {:round/results-board (comp/get-query ResultsBoard)}]
    :ident :round/id}
   (dom/div {:style {:float "left" :clear "left" :border "thin solid black"}}
-           (dom/h3 {} "Round[" id "] Number " number " - " (get-score {:player-board player-board :opponent-board opponent-board}))
-           (dom/div {:style {:float "left"}} "player board" (ui-board player-board))
+           (dom/h3 {} "Round[" id "] Number " number)
+           (dom/div {:style {:float "left"}} "results board" (ui-results-board results-board))
+           (dom/div {:style {:float "left" :clear "left"}} "player board" (ui-board player-board))
            (dom/div {:style {:float "left"}} "opponent board" (ui-board opponent-board))))
 (def ui-round (comp/factory Round {:keyfn :round/id}))
 (defsc Match [this {:match/keys [id rounds] :as props}]
@@ -492,7 +505,7 @@
 (def ui-match (comp/factory Match {:keyfn :match/id}))
 (defmutation init-round [{:keys [board/id]}]
   (action [{:keys [state]}]
-          (let [match-id 1
+          (let [match-id (last (sort (filter number? (keys (map #(identity %) (get-in @state [:match/id]))))))
                 last-round-id (last (sort (filter number? (keys (map #(identity %) (get-in @state [:round/id]))))))
                 last-round-number (get-in @state [:round/id last-round-id :round/number])
                 new-round-id (inc last-round-id)
@@ -500,12 +513,16 @@
                 player-board-id (get-in @state [:state-data/id :board :state-data/active-id])
                 player-board (get-in @state [:board/id player-board-id])
                 opponent-board (get-in @state [:board/id id])
+                results-board-id (inc (last (sort (filter number? (keys (map #(identity %) (get-in @state [:results-board/id])))))))
+                last-row-id (last (sort (filter number? (keys (map #(identity %) (get-in @state [:results-row/id]))))))
                 round {:round/id new-round-id
                        :round/number new-round-number
                        :round/player-board player-board
-                       :round/opponent-board opponent-board}]
-            #_(merge/merge-component! app Round round
-                                      :replace [:root/round])
+                       :round/opponent-board opponent-board
+                       :round/results-board { :results-board/id results-board-id
+                                              :results-board/results-rows [{:results-row/id (+ 1 last-row-id)}
+                                                                           {:results-row/id (+ 2 last-row-id)}
+                                                                           {:results-row/id (+ 3 last-row-id)}]}}]
             (merge/merge-component! app Round round
                                       :append [:match/id match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards match]}]
