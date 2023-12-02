@@ -6,6 +6,8 @@
     [com.fulcrologic.fulcro.algorithms.merge :as merge]
     [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
     [com.fulcrologic.fulcro.algorithms.data-targeting :as targeting]))
+(defn get-last-id [{:keys [state component-id]}]
+  (last (sort (filter number? (keys (map #(identity %) (get-in @state [component-id])))))))
 (defmutation make-blocked [{:space/keys [id]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:space/id id :space/occupant] :blocker)
@@ -427,9 +429,9 @@
 (defmutation get-board [{:board/keys [id size]}]
              (action [{:keys [state]}]
                      (swap! state assoc-in [:state-data/id :board :state-data/size] size)
-                     (let [new-board-id    (inc (last (sort (filter number? (keys (map #(identity %) (get-in @state [:board/id])))))))
-                           last-row-id    (last (sort (filter number? (keys (map #(identity %) (get-in @state [:row/id]))))))
-                           space-init-id  (last (sort (filter number? (keys (map #(identity %) (get-in @state [:space/id]))))))]
+                     (let [new-board-id    (inc (get-last-id {:state state :component-id :board/id}))
+                           last-row-id (get-last-id {:state state :component-id :row/id})
+                           space-init-id  (get-last-id {:state state :component-id :space/id})]
                        (merge/merge-component! app Board {:board/id new-board-id :board/size size :board/step-number 0
                                                           :board/rows (new-board-rows last-row-id space-init-id size)}
                                                :replace [:root/board])
@@ -471,10 +473,15 @@
   (print "opponent")
   (print (str opponent-board))
   (str "Player Points: " " Opponent Points: "))
-(defsc ResultsRow [this {:results-row/keys [id] :as props}]
-  {:query [:results-row/id]
+(defsc ResultsSpace [this {:results-space/keys [id] :as props}]
+  {:query [:results-space/id]
+   :ident :results-space/id}
+  (dom/div {:style {:float "left"}} (dom/p "space " id)))
+(def ui-results-space (comp/factory ResultsSpace {:keyfn :results-space/id}))
+(defsc ResultsRow [this {:results-row/keys [id results-spaces] :as props}]
+  {:query [:results-row/id {:results-row/results-spaces (comp/get-query ResultsSpace)}]
    :ident :results-row/id}
-  (dom/div {:style {:float "left"}} (dom/h4 {} "results row")))
+  (dom/div {:style {:float "left" :clear "left"}} (map ui-results-space results-spaces)))
 (def ui-results-row (comp/factory ResultsRow {:keyfn :results-row/id}))
 (defsc ResultsBoard [this {:results-board/keys [id results-rows] :as props}]
   {:query [:results-board/id {:results-board/results-rows (comp/get-query ResultsRow)}]
@@ -505,24 +512,35 @@
 (def ui-match (comp/factory Match {:keyfn :match/id}))
 (defmutation init-round [{:keys [board/id]}]
   (action [{:keys [state]}]
-          (let [match-id (last (sort (filter number? (keys (map #(identity %) (get-in @state [:match/id]))))))
-                last-round-id (last (sort (filter number? (keys (map #(identity %) (get-in @state [:round/id]))))))
+          (let [match-id (get-last-id {:state state :component-id :match/id})
+                last-round-id (get-last-id {:state state :component-id :round/id})
                 last-round-number (get-in @state [:round/id last-round-id :round/number])
                 new-round-id (inc last-round-id)
                 new-round-number (inc last-round-number)
                 player-board-id (get-in @state [:state-data/id :board :state-data/active-id])
                 player-board (get-in @state [:board/id player-board-id])
+                player-rows (get-in @state [:board/id player-board-id :board/rows])
                 opponent-board (get-in @state [:board/id id])
-                results-board-id (inc (last (sort (filter number? (keys (map #(identity %) (get-in @state [:results-board/id])))))))
-                last-row-id (last (sort (filter number? (keys (map #(identity %) (get-in @state [:results-row/id]))))))
+                opponent-rows (reverse (get-in @state [:board/id id :board/rows]))
+                results-board-id (inc (get-last-id {:state state :component-id :results-board/id}))
+                last-row-id (get-last-id {:state state :component-id :results-row/id})
+                last-space-id (get-last-id {:state state :component-id :results-space/id})
                 round {:round/id new-round-id
                        :round/number new-round-number
                        :round/player-board player-board
                        :round/opponent-board opponent-board
                        :round/results-board { :results-board/id results-board-id
-                                              :results-board/results-rows [{:results-row/id (+ 1 last-row-id)}
-                                                                           {:results-row/id (+ 2 last-row-id)}
-                                                                           {:results-row/id (+ 3 last-row-id)}]}}]
+                                              :results-board/results-rows [{:results-row/id (+ 1 last-row-id)
+                                                                            :results-row/results-spaces [{:results-space/id (+ 1 last-space-id)
+                                                                                                          :results-space/number 1}]}
+                                                                           {:results-row/id (+ 2 last-row-id)
+                                                                            :results-row/results-spaces [{:results-space/id (+ 2 last-space-id)
+                                                                                                          :results-space/number 2}]}
+                                                                           {:results-row/id (+ 3 last-row-id)
+                                                                            :results-row/results-spaces [{:results-space/id (+ 3 last-space-id)
+                                                                                                          :results-space/number 3}]}]}}]
+            (print (str "player" player-rows))
+            (print (str "opponent" opponent-rows))
             (merge/merge-component! app Round round
                                       :append [:match/id match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards match]}]
