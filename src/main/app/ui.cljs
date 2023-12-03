@@ -521,7 +521,11 @@
                 player-board (get-in @state [:board/id player-board-id])
                 player-rows (get-in @state [:board/id player-board-id :board/rows])
                 opponent-board (get-in @state [:board/id id])
-                opponent-rows (reverse (get-in @state [:board/id id :board/rows]))
+                opponent-rows (get-in @state [:board/id id :board/rows])
+                results-rows (reverse opponent-rows) #_(reduce (fn [results-rows row]
+                                       (assoc results-rows :this :thing))
+                                     []
+                                     (reverse opponent-rows))
                 results-board-id (inc (get-last-id {:state state :component-id :results-board/id}))
                 last-row-id (get-last-id {:state state :component-id :results-row/id})
                 last-space-id (get-last-id {:state state :component-id :results-space/id})
@@ -541,6 +545,7 @@
                                                                                                           :results-space/number 3}]}]}}]
             (print (str "player" player-rows))
             (print (str "opponent" opponent-rows))
+            (print (str "results" results-rows))
             (merge/merge-component! app Round round
                                       :append [:match/id match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards match]}]
