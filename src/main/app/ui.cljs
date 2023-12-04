@@ -467,12 +467,6 @@
                    :saved-boards/boards []}}
   (dom/div {:style {:clear "left"}} (dom/h2 {} "board size " board-size) (map ui-board boards)))
 (def ui-saved-boards (comp/factory SavedBoards {:keyfn :saved-boards/board-size}))
-(defn get-score [{:keys [player-board opponent-board]}]
-  (print "player")
-  (print (str player-board))
-  (print "opponent")
-  (print (str opponent-board))
-  (str "Player Points: " " Opponent Points: "))
 (defsc ResultsSpace [this {:results-space/keys [id] :as props}]
   {:query [:results-space/id]
    :ident :results-space/id}
@@ -516,18 +510,6 @@
                                                    :results-space/opponent opponent-space}]
                                 results-space)) player-spaces (reverse opponent-spaces))]
     (map #(assoc %1 :results-space/id %2) results-spaces (iterate inc space-start-id))))
-#_(defn get-results-rows [{:keys [space-start-id row-start-id player-rows opponent-rows]}]
-  (let [results-rows (map (fn [player-row opponent-row]
-         (let [player-spaces (get-in @state (conj player-row :row/spaces))
-               opponent-spaces (:row/spaces opponent-row)
-               results-row {:results-row/player player-row
-                            :results-row/opponent opponent-row
-                            :results-row/results-spaces (get-results-row-spaces {:space-start-id space-start-id
-                                                                                 :player-spaces player-spaces
-                                                                                 :opponent-spaces opponent-spaces})}]
-           (print (str "player-row " player-row))
-           results-row)) player-rows (reverse opponent-rows))]
-    (map #(assoc %1 :results-row/id %2) results-rows (iterate inc row-start-id))))
 (defmutation init-round [{:keys [board/id]}]
   (action [{:keys [state]}]
           (let [match-id (get-last-id {:state state :component-id :match/id})
@@ -541,19 +523,19 @@
                 opponent-board (get-in @state [:board/id id])
                 opponent-rows (get-in @state [:board/id id :board/rows])
                 last-row-id (get-last-id {:state state :component-id :results-row/id})
-                last-space-id (get-last-id {:state state :component-id :results-space/id})
                 results-rows (let [results-rows (map (fn [player-row opponent-row]
                                                        (let [player-spaces (get-in @state (conj player-row :row/spaces))
                                                              opponent-spaces (get-in @state (conj opponent-row :row/spaces))
+                                                             last-space-id (get-last-id {:state state :component-id :results-space/id})
+                                                             this-player-row (get-in @state (conj player-row :row/number))
+                                                             this-row-first-space-id (+ (inc last-space-id) (* (- this-player-row 1) (count player-spaces)))
                                                              results-row {:results-row/player-row player-row
                                                                           :results-row/opponent-row opponent-row
-                                                                          :results-row/results-spaces (vec (get-results-row-spaces {:space-start-id (inc last-space-id)
+                                                                          :results-row/results-spaces (vec (get-results-row-spaces {:space-start-id this-row-first-space-id
                                                                                                                                :player-spaces player-spaces
                                                                                                                                :opponent-spaces opponent-spaces}))}]
-                                                         (print (str "player-row " player-row))
                                                          results-row)) player-rows (reverse opponent-rows))]
                                (map #(assoc %1 :results-row/id %2) results-rows (iterate inc (inc last-row-id))))
-                    #_(get-results-rows {:space-start-id (inc last-space-id) :row-start-id (inc last-row-id) :player-rows player-rows :opponent-rows opponent-rows})
                 results-board-id (inc (get-last-id {:state state :component-id :results-board/id}))
                 round {:round/id new-round-id
                        :round/number new-round-number
