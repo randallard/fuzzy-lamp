@@ -4,8 +4,7 @@
     [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
     [com.fulcrologic.fulcro.dom :as dom]
     [com.fulcrologic.fulcro.algorithms.merge :as merge]
-    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
-    [com.fulcrologic.fulcro.algorithms.data-targeting :as targeting]))
+    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]))
 (defn get-last-id [{:keys [state component-id]}]
   (last (sort (filter number? (keys (map #(identity %) (get-in @state [component-id])))))))
 (defmutation make-blocked [{:space/keys [id]}]
@@ -64,67 +63,20 @@
                    (if (= type :row-type/goal) "goal "))})
 (defsc Space [this {:space/keys [id number occupant occupied-steps blocked-step show-move-block-button row]}]
        {:query [:space/id :space/number :space/row :space/occupant :space/occupied-steps :space/blocked-step :space/show-move-block-button]
-        :ident :space/id
-        :initial-state (fn [{:keys [id number occupant show-move-block-button row]}]
-                         {:space/id id
-                          :space/show-move-block-button show-move-block-button
-                          :space/number number
-                          :space/row row
-                          :space/occupant occupant
-                          :space/occupied-steps (cond (= occupant :player) [1]
-                                                      :else [])})}
+        :ident :space/id}
        (dom/span (space-css nil occupant)
                  (dom/button {:disabled (not show-move-block-button)
                               :onClick #(comp/transact! this [(make-occupied {:space/id id})]) :style {:margin "0px 15px"}}
                              " move ")
-                 #_(str "space number " number " id " id " " occupant " occupied " occupied-steps " blocked " blocked-step)
-                 number
+                 (str "space number " number " id " id " " occupant " occupied " occupied-steps " blocked " blocked-step)
                  (dom/button {:disabled (not show-move-block-button)
                               :onClick #(comp/transact! this [(make-blocked {:space/id id})]) :style {:margin "0px 15px"}}
                              " block ")))
 (def ui-space (comp/factory Space {:keyfn :space/id}))
 (defsc Row [this {:row/keys [id number type spaces] :as props}]
   {:query         [:row/id :row/number :row/type {:row/spaces (comp/get-query Space)}]
-   :ident         :row/id
-   :initial-state (fn [{:keys [id number type]}]
-                    {:row/id     id
-                     :row/number number
-                     :row/type   type
-                     :row/spaces (let [row-number number] (cond (> id 3) [(comp/get-initial-state Space {
-                                                                                :id             (+ (* (- row-number 1) 3) 1)
-                                                                                :number         1
-                                                                                :row row-number
-                                                                                :occupant       nil
-                                                                                :show-move-block-button (cond (= row-number 1) true
-                                                                                                              :else false)
-                                                                                })
-                                                 (comp/get-initial-state Space {:id       (+ (* (- row-number 1) 3) 2)
-                                                                                :number   2
-                                                                                :row row-number
-                                                                                :show-move-block-button (cond (= row-number 2) true
-                                                                                                              :else false)
-                                                                                :occupant (cond (= row-number 1) :player
-                                                                                                :else nil)})
-                                                 (comp/get-initial-state Space {:id       (+ (* (- row-number 1) 3) 3)
-                                                                                :number   3
-                                                                                :row row-number
-                                                                                :show-move-block-button (cond (= row-number 1) true
-                                                                                                              :else false)
-                                                                                :occupant nil})]
-                                       :else [(comp/get-initial-state Space {:id       (+ (* (- row-number 1) 3) 1)
-                                                                             :number   1
-                                                                             :row row-number
-                                                                             :show-move-block-button (cond (= row-number 1) true
-                                                                                                           :else false)
-                                                                             :occupant nil})
-                                              (comp/get-initial-state Space {:id       (+ (* (- row-number 1) 3) 2)
-                                                                             :number   2
-                                                                             :row row-number
-                                                                             :show-move-block-button (cond (= row-number 2) true
-                                                                                                           :else false)
-                                                                             :occupant (cond (= row-number 1) :player
-                                                                                             :else nil)})]))})}
-       (dom/div {} #_(str "row id " id " number " number) (dom/div {:style {:padding "5px"}} number (map ui-space spaces))))
+   :ident         :row/id}
+  (dom/div {} (str "row id " id " number " number " type " type) (dom/div {:style {:padding "5px"}} (map ui-space spaces))))
 (def ui-row (comp/factory Row {:keyfn :row/id}))
 (defsc Board [this {:board/keys [id size rows step-number] :as props}]
        {:query [:board/id :board/size :board/step-number {:board/rows (comp/get-query Row)}]
@@ -173,12 +125,13 @@
                      (let [new-board-id    (inc (get-last-id {:state state :component-id :board/id}))
                            last-row-id (get-last-id {:state state :component-id :row/id})
                            space-init-id  (get-last-id {:state state :component-id :space/id})
-                           rows (map (fn [row-number] (let [row {:row/id     (inc (+ last-row-id row-number))
+                           rows (map (fn [row-number] (let [this-row-first-space-id (+ (inc space-init-id) (* row-number size))
+                                                            row {:row/id     (inc (+ last-row-id row-number))
                                                                  :row/number row-number
                                                                  :row/type   (cond (= row-number 0) :row-type/opponent-goal
                                                                                    (= row-number (+ 1 size)) :row-type/goal
                                                                                    :else :row-type/spaces)
-                                                                 :row/spaces (vec (map (fn [space-number] (let [space {:space/id (inc (+ space-init-id space-number))
+                                                                 :row/spaces (vec (map (fn [space-number] (let [space {:space/id (inc (+ this-row-first-space-id space-number))
                                                                                                                        :space/number (inc space-number)
                                                                                                                        :space/row row-number
                                                                                                                        :space/blocked-step nil
