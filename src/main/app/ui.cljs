@@ -38,7 +38,8 @@
                   rows (get-in @state [:board/id active-id :board/rows])
                   new-state (map (fn [row]
                                    (let [row-spaces (get-in @state (conj row :row/spaces))
-                                         row-number (get-in @state (conj row :row/number))]
+                                         row-number (get-in @state (conj row :row/number))
+                                         row-type (get-in @state (conj row :row/type))]
                                      (vec (map (fn [row-space]
                                                  (let [space-number (get-in @state (conj row-space :space/number))
                                                        occupant (get-in @state (conj row-space :space/occupant))
@@ -52,9 +53,10 @@
                                                        is-adjascent (cond (and is-in-same-row is-one-space-away) true
                                                                           (and is-one-row-away is-same-space-number) true
                                                                           :else false)
+                                                       is-opponent-goal (= row-type :row-type/opponent-goal)
                                                        goal-reached (< board-size clicked-space-row)]
                                                    (swap! state assoc-in (conj row-space :space/show-move-block-button)
-                                                          (and is-adjascent (not is-blocked) (not goal-reached)))))
+                                                          (and is-adjascent (not is-blocked) (not is-opponent-goal) (not goal-reached)))))
                                                row-spaces)))) rows)] (str "new state " new-state)))))
 (defn space-css [type occupant]
   {:className (str "space "
@@ -68,7 +70,7 @@
                  (dom/button {:disabled (not show-move-block-button)
                               :onClick #(comp/transact! this [(make-occupied {:space/id id})]) :style {:margin "0px 15px"}}
                              " move ")
-                 (str "space number " number " id " id " " occupant " occupied " occupied-steps " blocked " blocked-step)
+                 #_(str "space number " number " id " id " " occupant " occupied " occupied-steps " blocked " blocked-step)
                  (dom/button {:disabled (not show-move-block-button)
                               :onClick #(comp/transact! this [(make-blocked {:space/id id})]) :style {:margin "0px 15px"}}
                              " block ")))
@@ -76,7 +78,7 @@
 (defsc Row [this {:row/keys [id number type spaces] :as props}]
   {:query         [:row/id :row/number :row/type {:row/spaces (comp/get-query Space)}]
    :ident         :row/id}
-  (dom/div {} (str "row id " id " number " number " type " type) (dom/div {:style {:padding "5px"}} (map ui-space spaces))))
+  (dom/div {} #_(str "row id " id " number " number " type " type) (dom/div {:style {:padding "5px"}} (map ui-space spaces))))
 (def ui-row (comp/factory Row {:keyfn :row/id}))
 (defsc Board [this {:board/keys [id size rows step-number] :as props}]
        {:query [:board/id :board/size :board/step-number {:board/rows (comp/get-query Row)}]
