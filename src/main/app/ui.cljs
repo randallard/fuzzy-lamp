@@ -219,12 +219,23 @@
 (def ui-match (comp/factory Match {:keyfn :match/id}))
 (defn get-results-row-spaces [{:keys [state space-start-id player-spaces opponent-spaces]}]
   (let [results-spaces (map (fn [player-space opponent-space]
-                              (let [results-space {:results-space/player player-space
+                              (let [player-space-row (get-in @state (conj player-space :space/row))
+                                    player-block-step (get-in @state (conj player-space :space/blocked-step))
+                                    player-occupied-steps (get-in @state (conj player-space :space/occupied-steps))
+                                    opponent-block-step (get-in @state (conj opponent-space :space/blocked-step))
+                                    opponent-occupied-steps (get-in @state (conj opponent-space :space/occupied-steps))
+                                    player-block-used (cond (nil? player-block-step) false
+                                                            :else true)
+                                    opponent-block-used (cond (nil? opponent-block-step) false
+                                                            :else true)
+                                    results-space {:results-space/player-block-used player-block-used
+                                                   :results-space/player player-space
                                                    :results-space/opponent opponent-space
-                                                   :results-space/player-block-step (get-in @state (conj player-space :space/blocked-step))
-                                                   :results-space/player-occupied-steps (get-in @state (conj player-space :space/occupied-steps))
-                                                   :results-space/opponent-block-step (get-in @state (conj opponent-space :space/blocked-step))
-                                                   :results-space/opponent-occupied-steps (get-in @state (conj opponent-space :space/occupied-steps))}]
+                                                   :results-space/player-block-step player-block-step
+                                                   :results-space/player-occupied-steps player-occupied-steps
+                                                   :results-space/opponent-block-step opponent-block-step
+                                                   :results-space/opponent-occupied-steps opponent-occupied-steps}]
+                                (print (str "player block used " player-block-used " row " player-space-row " opponent block used " opponent-block-used ))
                                 results-space)) player-spaces (reverse opponent-spaces))]
     (map #(assoc %1 :results-space/id %2) results-spaces (iterate inc space-start-id))))
 (defmutation init-round [{:keys [board/id]}]
@@ -250,8 +261,8 @@
                                                     :results-row/opponent-row opponent-row
                                                     :results-row/results-spaces (vec (get-results-row-spaces {:state state
                                                                                                               :space-start-id this-row-first-space-id
-                                                                                                         :player-spaces player-spaces
-                                                                                                         :opponent-spaces opponent-spaces}))}]
+                                                                                                              :player-spaces player-spaces
+                                                                                                              :opponent-spaces opponent-spaces}))}]
                                    results-row)) player-rows (reverse opponent-rows))]
                                (map #(assoc %1 :results-row/id %2) results-rows (iterate inc (inc last-row-id))))
                 results-board-id (inc (get-last-id {:state state :component-id :results-board/id}))
@@ -261,9 +272,6 @@
                        :round/opponent-board opponent-board
                        :round/results-board { :results-board/id results-board-id
                                               :results-board/results-rows (vec results-rows)}}]
-            (print (str "player" player-rows))
-            (print (str "opponent" opponent-rows))
-            (print (str "results" results-rows))
             (merge/merge-component! app Round round
                                       :append [:match/id match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards match]}]
