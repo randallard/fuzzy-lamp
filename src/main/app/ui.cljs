@@ -85,28 +85,7 @@
         :ident :board/id
         :initial-state {:board/id :param/id
                         :board/size :param/size
-                        :board/step-number :param/step-number
-                        :board/rows [{:id 7
-                                      :number 4
-                                      :type :row-type/goal}
-                                     {:id 6
-                                      :number 3
-                                      :type :row-type/space}
-                                     {:id 5
-                                      :number 2
-                                      :type :row-type/space}
-                                     {:id 4
-                                      :number 1
-                                      :type :row-type/space}
-                                     {:id 3
-                                      :number 3
-                                      :type :row-type/goal}
-                                     {:id 2
-                                      :number 2
-                                      :type :row-type/spaces}
-                                     {:id 1
-                                      :number 1
-                                      :type :row-type/spaces}]}}
+                        :board/step-number :param/step-number}}
        (dom/div {}
                 (dom/div {:style {:float "left" :padding "10px"}}
                          (dom/h2 {} "Board [" id "] Size " size)
@@ -228,14 +207,24 @@
                                                             :else true)
                                     opponent-block-used (cond (nil? opponent-block-step) false
                                                             :else true)
+                                    player-blocked-at-row (if (and opponent-block-used (some #(<= opponent-block-step %) player-occupied-steps))
+                                                                player-space-row)
+                                    opponent-blocked-at-row (if (and player-block-used (some #(<= player-block-step %) opponent-occupied-steps))
+                                                            player-space-row)
                                     results-space {:results-space/player-block-used player-block-used
+                                                   :resutls-space/player-blocked-at-row player-blocked-at-row
+                                                   :results-space/opponent-block-used opponent-block-used
+                                                   :resutls-space/opponent-blocked-at-row opponent-blocked-at-row
                                                    :results-space/player player-space
                                                    :results-space/opponent opponent-space
                                                    :results-space/player-block-step player-block-step
                                                    :results-space/player-occupied-steps player-occupied-steps
                                                    :results-space/opponent-block-step opponent-block-step
                                                    :results-space/opponent-occupied-steps opponent-occupied-steps}]
-                                (print (str "player block used " player-block-used " row " player-space-row " opponent block used " opponent-block-used ))
+                                (if player-block-used (print (str "space sees 1 player block used")))
+                                (if (not (nil? player-blocked-at-row)) (print (str "space sees player blocked at row " player-blocked-at-row)))
+                                (if opponent-block-used (print (str "space sees 1 opponent block used")))
+                                (if (not (nil? opponent-blocked-at-row)) (print (str "space sees opponent blocked at row " opponent-blocked-at-row)))
                                 results-space)) player-spaces (reverse opponent-spaces))]
     (map #(assoc %1 :results-space/id %2) results-spaces (iterate inc space-start-id))))
 (defmutation init-round [{:keys [board/id]}]
