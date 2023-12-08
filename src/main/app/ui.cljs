@@ -255,13 +255,15 @@
                                                                                    :opponent-spaces opponent-spaces})
                                        opponent-blocks-used (count (filter true? (map :results-space/opponent-block-used results-row-spaces)))
                                        player-blocks-used (count (filter true? (map :results-space/player-block-used results-row-spaces)))
-                                       opponent-was-blocked-at-row (first (filter #(not (nil? %)) (map :results-space/opponent-was-blocked-at-row results-row-spaces)))
+                                       opponent-was-blocked-at-row (first
+                                                                     (filter #(not (nil? %))
+                                                                                  (map :results-space/opponent-was-blocked-at-row results-row-spaces)))
                                        player-was-blocked-at-row (first (filter #(not (nil? %)) (map :results-space/player-was-blocked-at-row results-row-spaces)))
                                        collision-at-step (apply min (filter number? (map :results-space/collision-at-step results-row-spaces)))
                                        player-was-blocked-at-step (apply min (filter number? (map :results-space/player-was-blocked-at-step results-row-spaces)))
                                        opponent-was-blocked-at-step (apply min (filter number? (map :results-space/opponent-was-blocked-at-step results-row-spaces)))
-                                       player-steps-in-this-row player-spaces
-                                       opponent-steps-in-this-row 1
+                                       player-steps-in-this-row (apply min (apply concat (map #(get-in @state (conj % :space/occupied-steps)) player-spaces)))
+                                       opponent-steps-in-this-row (apply min (apply concat (map #(get-in @state (conj % :space/occupied-steps)) opponent-spaces)))
                                        results-row {:results-row/player-row player-row
                                                     :results-row/opponent-row opponent-row
                                                     :results-row/results-spaces (vec results-row-spaces)
@@ -272,8 +274,8 @@
                                                     :results-row/player-was-blocked-at-step player-was-blocked-at-step
                                                     :results-row/player-was-blocked-at-row player-was-blocked-at-row
                                                     :results-row/collision-at-step collision-at-step}]
-                                   (print (str "player steps in row " this-player-row ": [" player-steps-in-this-row "]"))
-                                   (print (str "opponent steps in row " this-player-row ": [" opponent-steps-in-this-row "]"))
+                                   (print (str "player steps in row " this-player-row ": " player-steps-in-this-row ))
+                                   (print (str "opponent steps in row " this-player-row ": " opponent-steps-in-this-row ))
                                    results-row)) player-rows (reverse opponent-rows))]
                                (map #(assoc %1 :results-row/id %2) results-rows (iterate inc (inc last-row-id))))
                 results-board-id (inc (get-last-id {:state state :component-id :results-board/id}))
