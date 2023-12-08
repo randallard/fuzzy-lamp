@@ -1,5 +1,6 @@
 (ns app.ui
   (:require
+    [clojure.set :refer [intersection]]
     [app.application :refer [app]]
     [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
     [com.fulcrologic.fulcro.dom :as dom]
@@ -156,13 +157,13 @@
                    :saved-boards/boards []}}
   (dom/div {:style {:clear "left"}} (dom/h2 {} "board size " board-size) (map ui-board boards)))
 (def ui-saved-boards (comp/factory SavedBoards {:keyfn :saved-boards/board-size}))
-(defsc ResultsSpace [this {:results-space/keys [id player-block-step player-occupied-steps opponent-block-step opponent-occupied-steps] :as props}]
-  {:query [:results-space/id :results-space/player-block-step :results-space/player-occupied-steps :results-space/opponent-block-step :results-space/opponent-occupied-steps]
+(defsc ResultsSpace [this {:results-space/keys [id player-set-block-at-step player-occupied-steps opponent-set-block-at-step opponent-occupied-steps] :as props}]
+  {:query [:results-space/id :results-space/player-set-block-at-step :results-space/player-occupied-steps :results-space/opponent-set-block-at-step :results-space/opponent-occupied-steps]
    :ident :results-space/id}
   (dom/div {:style {:float "left" :border "thin solid black" :padding "5px"}} #_(dom/p " space " id)
            (dom/div {:style {}}
-                    " player occupied at steps " (str player-occupied-steps) (dom/br) " player blocked at step " player-block-step (dom/br)
-                    " opponent occupied at steps " (str opponent-occupied-steps) (dom/br) " opponent blocked at step " opponent-block-step)))
+                    " player occupied at steps " (str player-occupied-steps) (dom/br) " player set block at step " player-set-block-at-step (dom/br)
+                    " opponent occupied at steps " (str opponent-occupied-steps) (dom/br) " opponent set block at step " opponent-set-block-at-step)))
 (def ui-results-space (comp/factory ResultsSpace {:keyfn :results-space/id}))
 (defsc ResultsRow [this {:results-row/keys [id results-spaces] :as props}]
   {:query [:results-row/id {:results-row/results-spaces (comp/get-query ResultsSpace)}]
@@ -199,29 +200,34 @@
 (defn get-results-row-spaces [{:keys [state space-start-id player-spaces opponent-spaces]}]
   (let [results-spaces (map (fn [player-space opponent-space]
                               (let [player-space-row (get-in @state (conj player-space :space/row))
-                                    player-block-step (get-in @state (conj player-space :space/blocked-step))
+                                    player-set-block-at-step (get-in @state (conj player-space :space/blocked-step))
                                     player-occupied-steps (get-in @state (conj player-space :space/occupied-steps))
-                                    opponent-block-step (get-in @state (conj opponent-space :space/blocked-step))
+                                    opponent-set-block-at-step (get-in @state (conj opponent-space :space/blocked-step))
                                     opponent-occupied-steps (get-in @state (conj opponent-space :space/occupied-steps))
-                                    player-block-used (cond (nil? player-block-step) false
+                                    player-block-used (cond (nil? player-set-block-at-step) false
                                                             :else true)
-                                    opponent-block-used (cond (nil? opponent-block-step) false
+                                    opponent-block-used (cond (nil? opponent-set-block-at-step) false
                                                             :else true)
-                                    player-blocked-at-row (if (and opponent-block-used (some #(<= opponent-block-step %) player-occupied-steps))
+                                    player-was-blocked-at-row (if (and opponent-block-used (some #(<= opponent-set-block-at-step %) player-occupied-steps))
                                                                 player-space-row)
-                                    opponent-blocked-at-row (if (and player-block-used (some #(<= player-block-step %) opponent-occupied-steps))
+                                    opponent-was-blocked-at-row (if (and player-block-used (some #(<= player-set-block-at-step %) opponent-occupied-steps))
                                                             player-space-row)
-                                    results-space {:results-space/player-block-used player-block-used
-                                                   :results-space/player-blocked-at-row player-blocked-at-row
+                                    collision-at-step (apply min (intersection (into #{} player-occupied-steps) (into #{} opponent-occupied-steps)))
+                                    player-was-blocked-at-step (apply min (filter #(and (not (nil? opponent-set-block-at-step)) (<= opponent-set-block-at-step %)) player-occupied-steps))
+                                    opponent-was-blocked-at-step (apply min (filter #(and (not (nil? player-set-block-at-step)) (<= player-set-block-at-step %)) opponent-occupied-steps))
+                                    results-space {:results-space/collision-at-step collision-at-step
+                                                   :results-space/player-block-used player-block-used
+                                                   :results-space/player-was-blocked-at-row player-was-blocked-at-row
                                                    :results-space/opponent-block-used opponent-block-used
-                                                   :results-space/opponent-blocked-at-row opponent-blocked-at-row
+                                                   :results-space/opponent-was-blocked-at-row opponent-was-blocked-at-row
                                                    :results-space/player player-space
                                                    :results-space/opponent opponent-space
-                                                   :results-space/player-block-step player-block-step
+                                                   :results-space/player-set-block-at-step player-set-block-at-step
                                                    :results-space/player-occupied-steps player-occupied-steps
-                                                   :results-space/opponent-block-step opponent-block-step
-                                                   :results-space/opponent-occupied-steps opponent-occupied-steps}]
-
+                                                   :results-space/opponent-set-block-at-step opponent-set-block-at-step
+                                                   :results-space/opponent-occupied-steps opponent-occupied-steps
+                                                   :results-space/player-was-blocked-at-step player-was-blocked-at-step
+                                                   :results-space/opponent-was-blocked-at-step opponent-was-blocked-at-step}]
                                 results-space)) player-spaces (reverse opponent-spaces))]
     (map #(assoc %1 :results-space/id %2) results-spaces (iterate inc space-start-id))))
 (defmutation init-round [{:keys [board/id]}]
@@ -249,15 +255,25 @@
                                                                                    :opponent-spaces opponent-spaces})
                                        opponent-blocks-used (count (filter true? (map :results-space/opponent-block-used results-row-spaces)))
                                        player-blocks-used (count (filter true? (map :results-space/player-block-used results-row-spaces)))
-                                       opponent-blocked-at-row (first (filter #(not (nil? %)) (map :results-space/opponent-blocked-at-row results-row-spaces)))
-                                       player-blocked-at-row (first (filter #(not (nil? %)) (map :results-space/player-blocked-at-row results-row-spaces)))
+                                       opponent-was-blocked-at-row (first (filter #(not (nil? %)) (map :results-space/opponent-was-blocked-at-row results-row-spaces)))
+                                       player-was-blocked-at-row (first (filter #(not (nil? %)) (map :results-space/player-was-blocked-at-row results-row-spaces)))
+                                       collision-at-step (apply min (filter number? (map :results-space/collision-at-step results-row-spaces)))
+                                       player-was-blocked-at-step (apply min (filter number? (map :results-space/player-was-blocked-at-step results-row-spaces)))
+                                       opponent-was-blocked-at-step (apply min (filter number? (map :results-space/opponent-was-blocked-at-step results-row-spaces)))
+                                       player-steps-in-this-row player-spaces
+                                       opponent-steps-in-this-row 1
                                        results-row {:results-row/player-row player-row
                                                     :results-row/opponent-row opponent-row
                                                     :results-row/results-spaces (vec results-row-spaces)
                                                     :results-row/opponent-blocks-used opponent-blocks-used
-                                                    :results-row/opponent-blocked-at-row opponent-blocked-at-row
+                                                    :results-row/opponent-was-blocked-at-step opponent-was-blocked-at-step
+                                                    :results-row/opponent-was-blocked-at-row opponent-was-blocked-at-row
                                                     :results-row/player-blocks-used player-blocks-used
-                                                    :results-row/player-blocked-at-row player-blocked-at-row}]
+                                                    :results-row/player-was-blocked-at-step player-was-blocked-at-step
+                                                    :results-row/player-was-blocked-at-row player-was-blocked-at-row
+                                                    :results-row/collision-at-step collision-at-step}]
+                                   (print (str "player steps in row " this-player-row ": [" player-steps-in-this-row "]"))
+                                   (print (str "opponent steps in row " this-player-row ": [" opponent-steps-in-this-row "]"))
                                    results-row)) player-rows (reverse opponent-rows))]
                                (map #(assoc %1 :results-row/id %2) results-rows (iterate inc (inc last-row-id))))
                 results-board-id (inc (get-last-id {:state state :component-id :results-board/id}))
