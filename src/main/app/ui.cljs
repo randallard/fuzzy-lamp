@@ -574,22 +574,19 @@
                                                      :style {:margin "0px 15px"}} (str " " (cond (nil? label) size
                                                                                                  :else        label)
                                                                                        " ")))]
-             (cond (= (:state-data/state state-data) :choose-size)
-                 (dom/div {} "select board size: "
-                          (get-new-board-button {:id (:board/id board) :size 2})
-                          (get-new-board-button {:id (:board/id board) :size 3}))
-                 :else (dom/div
-                         (dom/div {}
-                           (get-new-board-button {:id (:board/id board) :size 2 :label "new board size 2"})
-                           (get-new-board-button {:id (:board/id board) :size 3 :label "new board size 3"}))
-                         (dom/div {:style {:margin "15px"}}
-                                  (dom/button {:onClick #(comp/transact! this [(make-occupied {:space/id (:state-data/player-space-id state-data)})])
-                                               :style {:margin "0px 15px"}} "start")
-                                  (get-new-board-button {:id (:board/id board) :size (:board/size board) :label "clear spaces"})
-                                  (dom/button {:onClick #(comp/transact! this [(save-board {:board/id (:state-data/active-id state-data)})])
-                                               :style {:margin "0px 15px"}} "save board"))
-                         (ui-board board)
-                         (dom/div {:style {:clear "left"}} (dom/h1 {} "Match")
-                                  (ui-match match))
-                         (dom/div {} (dom/h1 {:style {:clear "left"}} "Saved Boards")
-                                  (map ui-saved-boards saved-boards)))))))
+             (dom/div {}
+                      (get-new-board-button {:id (:board/id board) :size 2 :label "new board size 2"})
+                      (get-new-board-button {:id (:board/id board) :size 3 :label "new board size 3"})
+                      (if (not (= (:state-data/state state-data) :choose-size))
+                        (dom/div
+                          (dom/div {:style {:margin "15px"}}
+                                   (dom/button {:onClick #(comp/transact! this [(make-occupied {:space/id (:state-data/player-space-id state-data)})])
+                                                :style {:margin "0px 15px"}} "start")
+                                   (get-new-board-button {:id (:board/id board) :size (:board/size board) :label "clear spaces"})
+                                   (dom/button {:onClick #(comp/transact! this [(save-board {:board/id (:state-data/active-id state-data)})])
+                                                :style {:margin "0px 15px"}} "save board"))
+                          (ui-board board)
+                          (dom/div {:style {:clear "left"}} (dom/h1 {} "Match")
+                                   (ui-match match))
+                          (dom/div {} (dom/h1 {:style {:clear "left"}} "Saved Boards")
+                                   (map ui-saved-boards saved-boards))))))))
