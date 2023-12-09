@@ -269,6 +269,11 @@
                                                                                  (or (nil? player-was-blocked-at-step) (< player-steps-in-this-row player-was-blocked-at-step)))
                                                                                player-steps-in-this-row
                                                                                :else nil)
+                                       opponent-step-in-row-before-stopped (cond (and
+                                                                                 (or (nil? players-collided-at-step) (< opponent-steps-in-this-row players-collided-at-step))
+                                                                                 (or (nil? opponent-was-blocked-at-step) (< opponent-steps-in-this-row opponent-was-blocked-at-step)))
+                                                                               opponent-steps-in-this-row
+                                                                               :else nil)
                                        results-row {:results-row/player-row-type row-type
                                                     :results-row/player-row-number row-number
                                                     :results-row/player-row player-row
@@ -278,6 +283,7 @@
                                                     :results-row/opponent-steps-in-this-row opponent-steps-in-this-row
                                                     :results-row/opponent-was-blocked-at-step opponent-was-blocked-at-step
                                                     :results-row/opponent-was-blocked-at-row opponent-was-blocked-at-row
+                                                    :results-row/opponent-steps-before-stopped opponent-step-in-row-before-stopped
                                                     :results-row/player-blocks-used player-blocks-used
                                                     :results-row/player-steps-in-this-row player-steps-in-this-row
                                                     :results-row/player-was-blocked-at-step player-was-blocked-at-step
@@ -297,6 +303,11 @@
                                                                     (or (nil? players-collided-at-step) (< % players-collided-at-step))
                                                                     (or (nil? player-was-blocked-at-step) (< % player-was-blocked-at-step)))
                                                               (map :results-row/player-steps-before-stopped results-rows)))
+                opponent-rows-progressed-before-stopped (count (filter #(and (> % 1)
+                                                                           (not (nil? %))
+                                                                           (or (nil? players-collided-at-step) (< % players-collided-at-step))
+                                                                           (or (nil? opponent-was-blocked-at-step) (< % opponent-was-blocked-at-step)))
+                                                                     (map :results-row/opponent-steps-before-stopped results-rows)))
                 round {:round/id new-round-id
                        :round/number new-round-number
                        :round/player-board player-board
@@ -306,6 +317,7 @@
                                              :results-board/players-collided-at-step players-collided-at-step
                                              :results-board/opponent-was-blocked-at-step opponent-was-blocked-at-step
                                              :results-board/opponent-used-blocks opponent-used-blocks
+                                             :results-board/opponent-rows-progressed-before-stopped opponent-rows-progressed-before-stopped
                                              :results-board/player-was-blocked-at-step player-was-blocked-at-step
                                              :results-board/player-used-blocks player-used-blocks
                                              :results-board/player-rows-progressed-before-stopped player-rows-progressed-before-stopped}}]
