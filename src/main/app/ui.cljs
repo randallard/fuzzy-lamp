@@ -244,7 +244,9 @@
                 opponent-rows (get-in @state [:board/id id :board/rows])
                 last-row-id (get-last-id {:state state :component-id :results-row/id})
                 results-rows (let [results-rows (map (fn [player-row opponent-row]
-                                 (let [player-spaces (get-in @state (conj player-row :row/spaces))
+                                 (let [row-type (get-in @state (conj player-row :row/type))
+                                       row-number (get-in @state (conj player-row :row/number))
+                                       player-spaces (get-in @state (conj player-row :row/spaces))
                                        opponent-spaces (get-in @state (conj opponent-row :row/spaces))
                                        last-space-id (get-last-id {:state state :component-id :results-space/id})
                                        this-player-row (get-in @state (conj player-row :row/number))
@@ -255,36 +257,40 @@
                                                                                    :opponent-spaces opponent-spaces})
                                        opponent-blocks-used (count (filter true? (map :results-space/opponent-block-used results-row-spaces)))
                                        player-blocks-used (count (filter true? (map :results-space/player-block-used results-row-spaces)))
-                                       opponent-was-blocked-at-row (first
-                                                                     (filter #(not (nil? %))
-                                                                                  (map :results-space/opponent-was-blocked-at-row results-row-spaces)))
+                                       opponent-was-blocked-at-row (first (filter #(not (nil? %)) (map :results-space/opponent-was-blocked-at-row results-row-spaces)))
                                        player-was-blocked-at-row (first (filter #(not (nil? %)) (map :results-space/player-was-blocked-at-row results-row-spaces)))
                                        collision-at-step (apply min (filter number? (map :results-space/collision-at-step results-row-spaces)))
                                        player-was-blocked-at-step (apply min (filter number? (map :results-space/player-was-blocked-at-step results-row-spaces)))
                                        opponent-was-blocked-at-step (apply min (filter number? (map :results-space/opponent-was-blocked-at-step results-row-spaces)))
                                        player-steps-in-this-row (apply min (apply concat (map #(get-in @state (conj % :space/occupied-steps)) player-spaces)))
                                        opponent-steps-in-this-row (apply min (apply concat (map #(get-in @state (conj % :space/occupied-steps)) opponent-spaces)))
-                                       results-row {:results-row/player-row player-row
+                                       results-row {:results-row/player-row-type row-type
+                                                    :results-row/player-row-number row-number
+                                                    :results-row/player-row player-row
                                                     :results-row/opponent-row opponent-row
                                                     :results-row/results-spaces (vec results-row-spaces)
                                                     :results-row/opponent-blocks-used opponent-blocks-used
+                                                    :results-row/opponent-steps-in-this-row opponent-steps-in-this-row
                                                     :results-row/opponent-was-blocked-at-step opponent-was-blocked-at-step
                                                     :results-row/opponent-was-blocked-at-row opponent-was-blocked-at-row
                                                     :results-row/player-blocks-used player-blocks-used
+                                                    :results-row/player-steps-in-this-row player-steps-in-this-row
                                                     :results-row/player-was-blocked-at-step player-was-blocked-at-step
                                                     :results-row/player-was-blocked-at-row player-was-blocked-at-row
                                                     :results-row/collision-at-step collision-at-step}]
-                                   (print (str "player steps in row " this-player-row ": " player-steps-in-this-row ))
-                                   (print (str "opponent steps in row " this-player-row ": " opponent-steps-in-this-row ))
                                    results-row)) player-rows (reverse opponent-rows))]
                                (map #(assoc %1 :results-row/id %2) results-rows (iterate inc (inc last-row-id))))
                 results-board-id (inc (get-last-id {:state state :component-id :results-board/id}))
+                opponent-was-blocked-at-step (apply min (filter number? (map :results-row/opponent-was-blocked-at-step results-rows)))
+                player-was-blocked-at-step (apply min (filter number? (map :results-row/player-was-blocked-at-step results-rows)))
                 round {:round/id new-round-id
                        :round/number new-round-number
                        :round/player-board player-board
                        :round/opponent-board opponent-board
-                       :round/results-board { :results-board/id results-board-id
-                                              :results-board/results-rows (vec results-rows)}}]
+                       :round/results-board {:results-board/id results-board-id
+                                             :results-board/results-rows (vec results-rows)
+                                             :results-board/opponent-was-blocked-at-step opponent-was-blocked-at-step
+                                             :results-board/player-was-blocked-at-step player-was-blocked-at-step}}]
             (merge/merge-component! app Round round
                                       :append [:match/id match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards match]}]
