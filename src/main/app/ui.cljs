@@ -320,7 +320,44 @@
                                              :results-board/opponent-rows-progressed-before-stopped opponent-rows-progressed-before-stopped
                                              :results-board/player-was-blocked-at-step player-was-blocked-at-step
                                              :results-board/player-used-blocks player-used-blocks
-                                             :results-board/player-rows-progressed-before-stopped player-rows-progressed-before-stopped}}]
+                                             :results-board/player-rows-progressed-before-stopped player-rows-progressed-before-stopped}}
+
+
+                player-spaces  ; list of spaces
+                        (reduce into () (map #(get-in @state [:row/id % :row/spaces])
+                            ; list of row ids
+                            (map #(get-in @state (conj % :row/id)) player-rows)))
+                #_({:results-space/players-collided-at-step players-collided-at-step
+                    :results-space/player-block-used player-block-used
+                    :results-space/player-was-blocked-at-row player-was-blocked-at-row
+                    :results-space/opponent-block-used opponent-block-used
+                    :results-space/opponent-was-blocked-at-row opponent-was-blocked-at-row
+                    :results-space/player player-space
+                    :results-space/opponent opponent-space
+                    :results-space/player-set-block-at-step player-set-block-at-step
+                    :results-space/player-occupied-steps player-occupied-steps
+                    :results-space/opponent-set-block-at-step opponent-set-block-at-step
+                    :results-space/opponent-occupied-steps opponent-occupied-steps
+                    :results-space/player-was-blocked-at-step player-was-blocked-at-step
+                    :results-space/opponent-was-blocked-at-step opponent-was-blocked-at-step})
+                result  ; steps from result spaces
+                        ; ie, at step 2 player blocked row 2 space 2,
+                        ;               opponent moved to row 2 space 2,
+                        ;               opponent is blocked
+                        ;     at step 3 player moved to row 1 space 3
+                        ;     at step 4 player moved to row 2 space 3
+                        ;     at step 5 player moved to row 3 space 3
+                        ;     at step 6 player reached the goal
+                        ; result-space for player step 2
+                (filter (fn [results-space] (or (some #{2} (:results-space/player-occupied-steps results-space))
+                                                (some #{2} (:results-space/opponent-occupied-steps results-space))))
+                        (reduce into () (map :results-row/results-spaces results-rows)))
+                player-step-2  (filter (fn [results-space] (some #{2} (:results-space/player-occupied-steps results-space)))
+                             (reduce into () (map :results-row/results-spaces results-rows)))
+                #_( reconstruct actions from player / opponent steps )
+
+                ]
+            (print (str "result " result))
             (merge/merge-component! app Round round
                                       :append [:match/id match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards match]}]
