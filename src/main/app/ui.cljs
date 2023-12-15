@@ -157,11 +157,6 @@
                    :saved-boards/boards []}}
   (dom/div {:style {:clear "left"}} (dom/h2 {} "board size " board-size) (map ui-board boards)))
 (def ui-saved-boards (comp/factory SavedBoards {:keyfn :saved-boards/board-size}))
-(defsc Step [this {:step/keys [id] :as props}]
-  {:query [:step/id]
-   :ident :step/id}
-  (dom/div {} (dom/p id)))
-(def ui-step (comp/factory Step {:keyfn :step/id}))
 (defsc ResultsSpace [this {:results-space/keys [id player-set-block-at-step player-occupied-steps opponent-set-block-at-step opponent-occupied-steps] :as props}]
   {:query [:results-space/id :results-space/player-set-block-at-step :results-space/player-occupied-steps :results-space/opponent-set-block-at-step :results-space/opponent-occupied-steps]
    :ident :results-space/id}
@@ -170,6 +165,11 @@
                     " player occupied at steps " (str player-occupied-steps) (dom/br) " player set block at step " player-set-block-at-step (dom/br)
                     " opponent occupied at steps " (str opponent-occupied-steps) (dom/br) " opponent set block at step " opponent-set-block-at-step)))
 (def ui-results-space (comp/factory ResultsSpace {:keyfn :results-space/id}))
+(defsc Step [this {:step/keys [id player-step-spaces opponent-step-spaces] :as props}]
+  {:query [:step/id {:step/player-step-spaces (comp/get-query ResultsSpace)} {:step/opponent-step-spaces (comp/get-query ResultsSpace)}]
+   :ident :step/id}
+  (dom/div {} (dom/p id)))
+(def ui-step (comp/factory Step {:keyfn :step/id}))
 (defsc ResultsRow [this {:results-row/keys [id results-spaces] :as props}]
   {:query [:results-row/id {:results-row/results-spaces (comp/get-query ResultsSpace)}]
    :ident :results-row/id}
@@ -344,13 +344,13 @@
                 (let [results-spaces (reduce into () (map :results-row/results-spaces results-rows))
                       steps-range (range 2 5)
                       last-step-id (get-last-id {:state state :component-id :step/id})
-                      steps (map (fn [step] (let [player-step-space (filter (fn [results-space] (some #{step} (:results-space/player-occupied-steps results-space)))
+                      steps (map (fn [step] (let [player-step-spaces (filter (fn [results-space] (some #{step} (:results-space/player-occupied-steps results-space)))
                                                                        results-spaces)
-                                                  opponent-step-space (filter (fn [results-space] (some #{step} (:results-space/opponent-occupied-steps results-space)))
+                                                  opponent-step-spaces (filter (fn [results-space] (some #{step} (:results-space/opponent-occupied-steps results-space)))
                                                                          results-spaces)]
                                               {:step/step-number step
-                                               :step/player-step-space player-step-space
-                                               :step/opponent-step-space opponent-step-space})) steps-range)]
+                                               :step/player-step-spaces (vec player-step-spaces)
+                                               :step/opponent-step-spaces (vec opponent-step-spaces)})) steps-range)]
                   (map #(assoc %1 :step/id %2) steps (iterate inc (inc last-step-id))))
                 round {:round/id new-round-id
                        :round/number new-round-number
