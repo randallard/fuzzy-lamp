@@ -157,6 +157,11 @@
                    :saved-boards/boards []}}
   (dom/div {:style {:clear "left"}} (dom/h2 {} "board size " board-size) (map ui-board boards)))
 (def ui-saved-boards (comp/factory SavedBoards {:keyfn :saved-boards/board-size}))
+(defsc Step [this {:step/keys [id] :as props}]
+  {:query [:step/id]
+   :ident :step/id}
+  (dom/div {} (dom/p id)))
+(def ui-step (comp/factory Step {:keyfn :step/id}))
 (defsc ResultsSpace [this {:results-space/keys [id player-set-block-at-step player-occupied-steps opponent-set-block-at-step opponent-occupied-steps] :as props}]
   {:query [:results-space/id :results-space/player-set-block-at-step :results-space/player-occupied-steps :results-space/opponent-set-block-at-step :results-space/opponent-occupied-steps]
    :ident :results-space/id}
@@ -176,15 +181,17 @@
   (dom/div {:style {:float "left"}} (dom/h4 {} "results board")
            (map ui-results-row results-rows)))
 (def ui-results-board (comp/factory ResultsBoard {:keyfn :results-board/id}))
-(defsc Round [this {:round/keys [id number player-board opponent-board results-board] :as props}]
+(defsc Round [this {:round/keys [id number player-board opponent-board results-board steps] :as props}]
   {:query [:round/id
            :round/number
+           {:round/steps (comp/get-query Step)}
            {:round/player-board (comp/get-query Board)}
            {:round/opponent-board (comp/get-query Board)}
            {:round/results-board (comp/get-query ResultsBoard)}]
    :ident :round/id}
   (dom/div {:style {:float "left" :clear "left" :border "thin solid black"}}
            (dom/h3 {} "Round[" id "] Number " number)
+           (dom/div {} "Steps" (map ui-step steps))
            (dom/div {:style {:float "left"}} "results board" (ui-results-board results-board))
            (dom/div {:style {:float "left" :clear "left"}} "player board" (ui-board player-board))
            (dom/div {:style {:float "left"}} "opponent board" (ui-board opponent-board))))
