@@ -175,10 +175,60 @@
    :ident :results-row/id}
   (dom/div {:style {:float "left" :clear "left"}} (map ui-results-space results-spaces)))
 (def ui-results-row (comp/factory ResultsRow {:keyfn :results-row/id}))
-(defsc ResultsBoard [this {:results-board/keys [id results-rows] :as props}]
-  {:query [:results-board/id {:results-board/results-rows (comp/get-query ResultsRow)}]
+(defsc ResultsBoard [this {:results-board/keys [id
+                                                results-rows
+                                                player-rows-progressed-before-stopped
+                                                player-used-blocks
+                                                player-was-blocked-at-step
+                                                player-points-total
+                                                opponent-rows-progressed-before-stopped
+                                                opponent-used-blocks
+                                                opponent-was-blocked-at-step
+                                                opponent-points-total
+                                                players-collided-at-step] :as props}]
+  {:query [:results-board/id {:results-board/results-rows (comp/get-query ResultsRow)}
+           :results-board/player-was-blocked-at-step :results-board/opponent-was-blocked-at-step
+           :results-board/player-rows-progressed-before-stopped :results-board/opponent-rows-progressed-before-stopped
+           :results-board/player-points-total :results-board/opponent-points-total
+           :results-board/player-used-blocks :results-board/opponent-used-blocks
+           :results-board/players-collided-at-step]
    :ident :results-board/id}
-  (dom/div {:style {:float "left"}} (dom/h4 {} "results board")
+  (dom/div {:style {:float "left"}}
+           (dom/table {}
+             (dom/tr {}
+               (dom/th {} "category") (dom/th {} "player points") (dom/th {} "opponent points"))
+             (dom/tr {}
+               (dom/td {:style {:text-align "right"}} "rows progressed")
+               (dom/td {:style {:text-align "right"}} player-rows-progressed-before-stopped)
+               (dom/td {:style {:text-align "right"}} opponent-rows-progressed-before-stopped))
+             (dom/tr {}
+               (dom/td {:style {:text-align "right"}} "used blocks")
+               (dom/td {:style {:text-align "right"}} player-used-blocks)
+               (dom/td {:style {:text-align "right"}} opponent-used-blocks))
+             (dom/tr {}
+               (dom/td {:style {:text-align "right"}} "was blocked")
+               (dom/td {:style {:text-align "right"}} (cond (nil? player-was-blocked-at-step) 0
+                             :else -1))
+               (dom/td {:style {:text-align "right"}} (cond (nil? opponent-was-blocked-at-step) 0
+                             :else -1)))
+             (dom/tr {}
+               (dom/td {:style {:text-align "right"}} "successful block")
+               (dom/td {:style {:text-align "right"}} (cond (nil? opponent-was-blocked-at-step) 0
+                             :else 1))
+               (dom/td {:style {:text-align "right"}} (cond (nil? player-was-blocked-at-step) 0
+                             :else 1)))
+             (dom/tr {}
+               (dom/td {:style {:text-align "right"}} "collided")
+               (dom/td {:style {:text-align "right"}} (cond (nil? players-collided-at-step) 0
+                             :else -1))
+               (dom/td {:style {:text-align "right"}} (cond (nil? players-collided-at-step) 0
+                             :else -1)))
+
+            (dom/tr {}
+              (dom/td {:style {:text-align "right"}} "total")
+              (dom/td {:style {:text-align "right"}} player-points-total)
+              (dom/td {:style {:text-align "right"}} opponent-points-total))
+                      )
            (map ui-results-row results-rows)))
 (def ui-results-board (comp/factory ResultsBoard {:keyfn :results-board/id}))
 (defsc Round [this {:round/keys [id number player-board opponent-board results-board steps] :as props}]
@@ -365,7 +415,47 @@
                                              :results-board/opponent-rows-progressed-before-stopped opponent-rows-progressed-before-stopped
                                              :results-board/player-was-blocked-at-step player-was-blocked-at-step
                                              :results-board/player-used-blocks player-used-blocks
-                                             :results-board/player-rows-progressed-before-stopped player-rows-progressed-before-stopped}}]
+                                             :results-board/player-rows-progressed-before-stopped player-rows-progressed-before-stopped
+                                             :results-board/player-points-total (+ player-rows-progressed-before-stopped
+                                                                                   (* -1 player-used-blocks)
+                                                                                   (cond (nil? player-was-blocked-at-step) 0
+                                                                                         :else -1)
+                                                                                   (cond (nil? opponent-was-blocked-at-step) 0
+                                                                                         :else 1))
+                                             :results-board/opponent-points-total (+ opponent-rows-progressed-before-stopped
+                                                                                     (* -1 opponent-used-blocks)
+                                                                                     (cond (nil? opponent-was-blocked-at-step) 0
+                                                                                           :else -1)
+                                                                                     (cond (nil? player-was-blocked-at-step) 0
+                                                                                           :else 1))}}]
+            (comment             (dom/tr {}
+                                         (dom/th {} "category") (dom/th {} "player points") (dom/th {} "opponent points"))
+                                 (dom/tr {}
+                                         (dom/td {:style {:text-align "right"}} "rows progressed")
+                                         (dom/td {:style {:text-align "right"}} player-rows-progressed-before-stopped)
+                                         (dom/td {:style {:text-align "right"}} opponent-rows-progressed-before-stopped))
+                                 (dom/tr {}
+                                         (dom/td {:style {:text-align "right"}} "used blocks")
+                                         (dom/td {:style {:text-align "right"}} player-used-blocks)
+                                         (dom/td {:style {:text-align "right"}} opponent-used-blocks))
+                                 (dom/tr {}
+                                         (dom/td {:style {:text-align "right"}} "was blocked")
+                                         (dom/td {:style {:text-align "right"}} (cond (nil? player-was-blocked-at-step) 0
+                                                                                      :else -1))
+                                         (dom/td {:style {:text-align "right"}} (cond (nil? opponent-was-blocked-at-step) 0
+                                                                                      :else -1)))
+                                 (dom/tr {}
+                                         (dom/td {:style {:text-align "right"}} "successful block")
+                                         (dom/td {:style {:text-align "right"}} (cond (nil? opponent-was-blocked-at-step) 0
+                                                                                      :else 1))
+                                         (dom/td {:style {:text-align "right"}} (cond (nil? player-was-blocked-at-step) 0
+                                                                                      :else 1)))
+                                 (dom/tr {}
+                                         (dom/td {:style {:text-align "right"}} "collided")
+                                         (dom/td {:style {:text-align "right"}} (cond (nil? players-collided-at-step) 0
+                                                                                      :else -1))
+                                         (dom/td {:style {:text-align "right"}} (cond (nil? players-collided-at-step) 0
+                                                                                      :else -1))))
             (merge/merge-component! app Round round
                                       :append [:match/id match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards match]}]
