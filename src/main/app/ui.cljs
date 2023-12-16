@@ -165,10 +165,10 @@
                     " player occupied at steps " (str player-occupied-steps) (dom/br) " player set block at step " player-set-block-at-step (dom/br)
                     " opponent occupied at steps " (str opponent-occupied-steps) (dom/br) " opponent set block at step " opponent-set-block-at-step)))
 (def ui-results-space (comp/factory ResultsSpace {:keyfn :results-space/id}))
-(defsc Step [this {:step/keys [id player-step-spaces opponent-step-spaces] :as props}]
-  {:query [:step/id {:step/player-step-spaces (comp/get-query ResultsSpace)} {:step/opponent-step-spaces (comp/get-query ResultsSpace)}]
+(defsc Step [this {:step/keys [id step-number player-step-spaces opponent-step-spaces] :as props}]
+  {:query [:step/id :step/step-number {:step/player-step-spaces (comp/get-query ResultsSpace)} {:step/opponent-step-spaces (comp/get-query ResultsSpace)}]
    :ident :step/id}
-  (dom/div {} (dom/p id)))
+  (dom/div {} (dom/p "number: " step-number " (id: " id ")")))
 (def ui-step (comp/factory Step {:keyfn :step/id}))
 (defsc ResultsRow [this {:results-row/keys [id results-spaces] :as props}]
   {:query [:results-row/id {:results-row/results-spaces (comp/get-query ResultsSpace)}]
