@@ -165,11 +165,6 @@
                     " player occupied at steps " (str player-occupied-steps) (dom/br) " player set block at step " player-set-block-at-step (dom/br)
                     " opponent occupied at steps " (str opponent-occupied-steps) (dom/br) " opponent set block at step " opponent-set-block-at-step)))
 (def ui-results-space (comp/factory ResultsSpace {:keyfn :results-space/id}))
-(defsc Step [this {:step/keys [id step-number player-step-spaces opponent-step-spaces] :as props}]
-  {:query [:step/id :step/step-number {:step/player-step-spaces (comp/get-query ResultsSpace)} {:step/opponent-step-spaces (comp/get-query ResultsSpace)}]
-   :ident :step/id}
-  (dom/div {} (dom/p "number: " step-number " (id: " id ")")))
-(def ui-step (comp/factory Step {:keyfn :step/id}))
 (defsc ResultsRow [this {:results-row/keys [id results-spaces] :as props}]
   {:query [:results-row/id {:results-row/results-spaces (comp/get-query ResultsSpace)}]
    :ident :results-row/id}
@@ -198,50 +193,48 @@
              (dom/tr {}
                (dom/th {} "category") (dom/th {} "player points") (dom/th {} "opponent points"))
              (dom/tr {}
-               (dom/td {:style {:text-align "right"}} "rows progressed")
-               (dom/td {:style {:text-align "right"}} player-rows-progressed-before-stopped)
-               (dom/td {:style {:text-align "right"}} opponent-rows-progressed-before-stopped))
+               (dom/td {:style {:textAlign "right"}} "rows progressed")
+               (dom/td {:style {:textAlign "right"}} player-rows-progressed-before-stopped)
+               (dom/td {:style {:textAlign "right"}} opponent-rows-progressed-before-stopped))
              (dom/tr {}
-               (dom/td {:style {:text-align "right"}} "used blocks")
-               (dom/td {:style {:text-align "right"}} player-used-blocks)
-               (dom/td {:style {:text-align "right"}} opponent-used-blocks))
+               (dom/td {:style {:textAlign "right"}} "used blocks")
+               (dom/td {:style {:textAlign "right"}} player-used-blocks)
+               (dom/td {:style {:textAlign "right"}} opponent-used-blocks))
              (dom/tr {}
-               (dom/td {:style {:text-align "right"}} "was blocked")
-               (dom/td {:style {:text-align "right"}} (cond (nil? player-was-blocked-at-step) 0
+               (dom/td {:style {:textAlign "right"}} "was blocked")
+               (dom/td {:style {:textAlign "right"}} (cond (nil? player-was-blocked-at-step) 0
                              :else -1))
-               (dom/td {:style {:text-align "right"}} (cond (nil? opponent-was-blocked-at-step) 0
+               (dom/td {:style {:textAlign "right"}} (cond (nil? opponent-was-blocked-at-step) 0
                              :else -1)))
              (dom/tr {}
-               (dom/td {:style {:text-align "right"}} "successful block")
-               (dom/td {:style {:text-align "right"}} (cond (nil? opponent-was-blocked-at-step) 0
+               (dom/td {:style {:textAlign "right"}} "successful block")
+               (dom/td {:style {:textAlign "right"}} (cond (nil? opponent-was-blocked-at-step) 0
                              :else 1))
-               (dom/td {:style {:text-align "right"}} (cond (nil? player-was-blocked-at-step) 0
+               (dom/td {:style {:textAlign "right"}} (cond (nil? player-was-blocked-at-step) 0
                              :else 1)))
              (dom/tr {}
-               (dom/td {:style {:text-align "right"}} "collided")
-               (dom/td {:style {:text-align "right"}} (cond (nil? players-collided-at-step) 0
+               (dom/td {:style {:textAlign "right"}} "collided")
+               (dom/td {:style {:textAlign "right"}} (cond (nil? players-collided-at-step) 0
                              :else -1))
-               (dom/td {:style {:text-align "right"}} (cond (nil? players-collided-at-step) 0
+               (dom/td {:style {:textAlign "right"}} (cond (nil? players-collided-at-step) 0
                              :else -1)))
 
             (dom/tr {}
-              (dom/td {:style {:text-align "right"}} "total")
-              (dom/td {:style {:text-align "right"}} player-points-total)
-              (dom/td {:style {:text-align "right"}} opponent-points-total))
+              (dom/td {:style {:textAlign "right"}} "total")
+              (dom/td {:style {:textAlign "right"}} player-points-total)
+              (dom/td {:style {:textAlign "right"}} opponent-points-total))
                       )
            (map ui-results-row results-rows)))
 (def ui-results-board (comp/factory ResultsBoard {:keyfn :results-board/id}))
-(defsc Round [this {:round/keys [id number player-board opponent-board results-board steps] :as props}]
+(defsc Round [this {:round/keys [id number player-board opponent-board results-board] :as props}]
   {:query [:round/id
            :round/number
-           {:round/steps (comp/get-query Step)}
            {:round/player-board (comp/get-query Board)}
            {:round/opponent-board (comp/get-query Board)}
            {:round/results-board (comp/get-query ResultsBoard)}]
    :ident :round/id}
   (dom/div {:style {:float "left" :clear "left" :border "thin solid black"}}
            (dom/h3 {} "Round[" id "] Number " number)
-           (dom/div {} "Steps" (map ui-step steps))
            (dom/div {:style {:float "left"}} "results board" (ui-results-board results-board))
            (dom/div {:style {:float "left" :clear "left"}} "player board" (ui-board player-board))
            (dom/div {:style {:float "left"}} "opponent board" (ui-board opponent-board))))
