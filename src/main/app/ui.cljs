@@ -369,22 +369,10 @@
                         (reduce into () (map #(get-in @state [:row/id % :row/spaces])
                             ; list of row ids
                             (map #(get-in @state (conj % :row/id)) player-rows)))
-                steps  (let [results-spaces (reduce into () (map :results-row/results-spaces results-rows))
-                      steps-range (range 2 5)
-                      last-step-id (get-last-id {:state state :component-id :step/id})
-                      steps (map (fn [step] (let [player-step-spaces (filter (fn [results-space] (some #{step} (:results-space/player-occupied-steps results-space)))
-                                                                       results-spaces)
-                                                  opponent-step-spaces (filter (fn [results-space] (some #{step} (:results-space/opponent-occupied-steps results-space)))
-                                                                         results-spaces)]
-                                              {:step/step-number step
-                                               :step/player-step-spaces (vec player-step-spaces)
-                                               :step/opponent-step-spaces (vec opponent-step-spaces)})) steps-range)]
-                  (map #(assoc %1 :step/id %2) steps (iterate inc (inc last-step-id))))
                 round {:round/id new-round-id
                        :round/number new-round-number
                        :round/player-board player-board
                        :round/opponent-board opponent-board
-                       :round/steps (vec steps)
                        :round/results-board {:results-board/id results-board-id
                                              :results-board/results-rows (vec results-rows)
                                              :results-board/players-collided-at-step players-collided-at-step
