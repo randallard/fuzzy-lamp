@@ -369,29 +369,7 @@
                         (reduce into () (map #(get-in @state [:row/id % :row/spaces])
                             ; list of row ids
                             (map #(get-in @state (conj % :row/id)) player-rows)))
-                #_({:results-space/players-collided-at-step players-collided-at-step
-                    :results-space/player-block-used player-block-used
-                    :results-space/player-was-blocked-at-row player-was-blocked-at-row
-                    :results-space/opponent-block-used opponent-block-used
-                    :results-space/opponent-was-blocked-at-row opponent-was-blocked-at-row
-                    :results-space/player player-space
-                    :results-space/opponent opponent-space
-                    :results-space/player-set-block-at-step player-set-block-at-step
-                    :results-space/player-occupied-steps player-occupied-steps
-                    :results-space/opponent-set-block-at-step opponent-set-block-at-step
-                    :results-space/opponent-occupied-steps opponent-occupied-steps
-                    :results-space/player-was-blocked-at-step player-was-blocked-at-step
-                    :results-space/opponent-was-blocked-at-step opponent-was-blocked-at-step})
-                steps  ; steps from result spaces
-                        ; ie, at step 2 player blocked row 2 space 2,
-                        ;               opponent moved to row 2 space 2,
-                        ;               opponent is blocked
-                        ;     at step 3 player moved to row 1 space 3
-                        ;     at step 4 player moved to row 2 space 3
-                        ;     at step 5 player moved to row 3 space 3
-                        ;     at step 6 player reached the goal
-
-                (let [results-spaces (reduce into () (map :results-row/results-spaces results-rows))
+                steps  (let [results-spaces (reduce into () (map :results-row/results-spaces results-rows))
                       steps-range (range 2 5)
                       last-step-id (get-last-id {:state state :component-id :step/id})
                       steps (map (fn [step] (let [player-step-spaces (filter (fn [results-space] (some #{step} (:results-space/player-occupied-steps results-space)))
@@ -428,34 +406,6 @@
                                                                                            :else -1)
                                                                                      (cond (nil? player-was-blocked-at-step) 0
                                                                                            :else 1))}}]
-            (comment             (dom/tr {}
-                                         (dom/th {} "category") (dom/th {} "player points") (dom/th {} "opponent points"))
-                                 (dom/tr {}
-                                         (dom/td {:style {:text-align "right"}} "rows progressed")
-                                         (dom/td {:style {:text-align "right"}} player-rows-progressed-before-stopped)
-                                         (dom/td {:style {:text-align "right"}} opponent-rows-progressed-before-stopped))
-                                 (dom/tr {}
-                                         (dom/td {:style {:text-align "right"}} "used blocks")
-                                         (dom/td {:style {:text-align "right"}} player-used-blocks)
-                                         (dom/td {:style {:text-align "right"}} opponent-used-blocks))
-                                 (dom/tr {}
-                                         (dom/td {:style {:text-align "right"}} "was blocked")
-                                         (dom/td {:style {:text-align "right"}} (cond (nil? player-was-blocked-at-step) 0
-                                                                                      :else -1))
-                                         (dom/td {:style {:text-align "right"}} (cond (nil? opponent-was-blocked-at-step) 0
-                                                                                      :else -1)))
-                                 (dom/tr {}
-                                         (dom/td {:style {:text-align "right"}} "successful block")
-                                         (dom/td {:style {:text-align "right"}} (cond (nil? opponent-was-blocked-at-step) 0
-                                                                                      :else 1))
-                                         (dom/td {:style {:text-align "right"}} (cond (nil? player-was-blocked-at-step) 0
-                                                                                      :else 1)))
-                                 (dom/tr {}
-                                         (dom/td {:style {:text-align "right"}} "collided")
-                                         (dom/td {:style {:text-align "right"}} (cond (nil? players-collided-at-step) 0
-                                                                                      :else -1))
-                                         (dom/td {:style {:text-align "right"}} (cond (nil? players-collided-at-step) 0
-                                                                                      :else -1))))
             (merge/merge-component! app Round round
                                       :append [:match/id match-id :match/rounds]))))
 (defsc Root [this {:root/keys [board state-data saved-boards match]}]
