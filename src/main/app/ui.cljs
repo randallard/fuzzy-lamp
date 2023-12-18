@@ -295,6 +295,7 @@
                 last-row-id (get-last-id {:state state :component-id :results-row/id})
                 results-rows (let [results-rows (map (fn [player-row opponent-row]
                                  (let [row-type (get-in @state (conj player-row :row/type))
+                                       opponent-row-type (get-in @state (conj opponent-row :row/type))
                                        row-number (get-in @state (conj player-row :row/number))
                                        player-spaces (get-in @state (conj player-row :row/spaces))
                                        opponent-spaces (get-in @state (conj opponent-row :row/spaces))
@@ -327,6 +328,7 @@
                                        results-row {:results-row/player-row-type row-type
                                                     :results-row/player-row-number row-number
                                                     :results-row/player-row player-row
+                                                    :results-row/opponent-row-type opponent-row-type
                                                     :results-row/opponent-row opponent-row
                                                     :results-row/results-spaces (vec results-row-spaces)
                                                     :results-row/opponent-blocks-used opponent-blocks-used
@@ -342,12 +344,29 @@
                                                     :results-row/player-steps-before-stopped player-step-in-row-before-stopped}]
                                    results-row)) player-rows (reverse opponent-rows))]
                                (map #(assoc %1 :results-row/id %2) results-rows (iterate inc (inc last-row-id))))
+
+                results-spaces (reduce into () (map :results-row/results-spaces results-rows))
+                results-steps 1                             ;loop and collect steps while no collision, no goal reached, no block hit
+
+                player-reached-goal-at-step (apply min (map :results-row/player-steps-in-this-row (filter #(= (:results-row/player-row-type %) :row-type/goal) results-rows)))
+                opponent-reached-goal-at-step (apply min (map :results-row/opponent-steps-in-this-row (filter #(= (:results-row/opponent-row-type %) :row-type/goal) results-rows)))
+
+                to-print (let [result player-reached-goal-at-step]
+                           (print (str "result " result))
+                           result)
                 results-board-id (inc (get-last-id {:state state :component-id :results-board/id}))
-                opponent-was-blocked-at-step (apply min (filter number? (map :results-row/opponent-was-blocked-at-step results-rows)))
-                opponent-used-blocks (reduce + (map :results-row/opponent-blocks-used results-rows))
+                opponent-was-blocked-at-step ; only blocks that were placed before player was blocked
+                                             (apply min (filter number? (map :results-row/opponent-was-blocked-at-step results-rows)))
+                opponent-used-blocks ; only blocks before collided or player was blocked
+                                     (reduce + (map :results-row/opponent-blocks-used results-rows))
                 player-was-blocked-at-step (apply min (filter number? (map :results-row/player-was-blocked-at-step results-rows)))
-                player-used-blocks (reduce + (map :results-row/player-blocks-used results-rows))
-                players-collided-at-step (apply min (filter number? (map :results-row/players-collided-at-step results-rows)))
+                player-used-blocks ; only blocks before collided or player was blocked
+                                   (reduce + (map :results-row/player-blocks-used results-rows))
+                players-collided-at-step ; nil if either player was blocked before this step
+                                         (let [collided-at-step (apply min (filter number? (map :results-row/players-collided-at-step results-rows)))]
+                                           (cond (or (< player-was-blocked-at-step collided-at-step)
+                                                     (< opponent-was-blocked-at-step collided-at-step)) nil
+                                                 :else collided-at-step))
                 player-rows-progressed-before-stopped (count (filter #(and (> % 1)
                                                                     (not (nil? %))
                                                                     (or (nil? players-collided-at-step) (< % players-collided-at-step))
@@ -358,10 +377,6 @@
                                                                            (or (nil? players-collided-at-step) (< % players-collided-at-step))
                                                                            (or (nil? opponent-was-blocked-at-step) (< % opponent-was-blocked-at-step)))
                                                                      (map :results-row/opponent-steps-before-stopped results-rows)))
-                player-spaces  ; list of spaces
-                        (reduce into () (map #(get-in @state [:row/id % :row/spaces])
-                            ; list of row ids
-                            (map #(get-in @state (conj % :row/id)) player-rows)))
                 round {:round/id new-round-id
                        :round/number new-round-number
                        :round/player-board player-board
